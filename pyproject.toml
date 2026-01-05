@@ -1,0 +1,24 @@
+[build-system]
+requires = ["flit_core >=3.11,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "message_sender_telegram_bot"
+authors = [{ name = "roli2py", email = "romanmashevskyi@proton.me" }]
+license = "MIT"
+license-files = ["LICENSE"]
+readme = "README.md"
+requires-python = "~=3.14"
+dynamic = ["version", "description"]
+dependencies = ["python-telegram-bot ~= 22.5"]
+
+[project.urls]
+Home = "https://github.com/roli2py/message-sender-telegram-bot"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "./src/message_sender_telegram_bot"
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+src_paths = ["./src/message_sender_telegram_bot"]
