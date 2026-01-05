@@ -19,8 +19,6 @@ class EmailSender(Sender):
 
     @override
     def send(self: Self, data: str) -> None:
-        # TODO create a unit test for a case when a `data` is not in the
-        # ASCII range
         _ = self.__smtp.sendmail(
             self.__from_addr,
             self.__to_addr,

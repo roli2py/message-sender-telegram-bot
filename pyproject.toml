@@ -12,13 +12,27 @@ requires-python = "~=3.14"
 dynamic = ["version", "description"]
 dependencies = ["python-telegram-bot ~= 22.5"]
 
+[project.optional-dependencies]
+test = ["pytest ~= 9.0.2", "pytest-cov ~= 7.0.0"]
+
 [project.urls]
 Home = "https://github.com/roli2py/message-sender-telegram-bot"
 
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+pythonpath = ["./src/message_sender_telegram_bot"]
+
 [[tool.basedpyright.executionEnvironments]]
 root = "./src/message_sender_telegram_bot"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "./tests"
+extraPaths = ["./src/message_sender_telegram_bot"]
 
 [tool.isort]
 profile = "black"
 skip_gitignore = true
 src_paths = ["./src/message_sender_telegram_bot"]
+
+[tool.black]
+line-length = 79
