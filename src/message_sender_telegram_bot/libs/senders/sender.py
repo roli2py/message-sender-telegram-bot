@@ -8,9 +8,17 @@ if TYPE_CHECKING:
 
 
 class Sender(metaclass=ABCMeta):
+    """A sender interface."""
 
     @abstractmethod
     def send(self: Self, data: str) -> None:
+        """
+        Sends a data.
+
+        :param data: Data to send.
+        :type data: str
+        :raises NotImplementedError: Must to be implemented
+        """
         raise NotImplementedError(
             f"The `send` method of the `Sender` interface must be implemented"
         )

@@ -6,4 +6,4 @@ format:
 	black .
 
 test:
-	pytest
+	pytest --cov=src/message_sender_telegram_bot/libs

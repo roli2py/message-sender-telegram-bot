@@ -4,25 +4,24 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from smtplib import SMTP
     from typing import Self
 
 
-class SMTPCreator(metaclass=ABCMeta):
-    """A SMTP creator interface."""
+class Authorization(metaclass=ABCMeta):
+    """An autorization interface."""
 
     @abstractmethod
-    def create(self: Self) -> SMTP:
+    def authorize(self: Self) -> bool:
         """
-        Creates an SMTP instance.
+        Initializes an authorization.
 
-        :raises NotImplementedError: Must to be implemented.
-        :return: A SMTP instance.
-        :rtype: SMTP
+        :raises NotImplementedError: Must be implemented.
+        :return: A success of the authorization.
+        :rtype: bool
         """
         raise NotImplementedError(
             (
                 f"A `{__name__}` method of the `{self.__class__.__name__}` "
-                "interface must be implemented"
+                f"interface must be implemented"
             )
         )

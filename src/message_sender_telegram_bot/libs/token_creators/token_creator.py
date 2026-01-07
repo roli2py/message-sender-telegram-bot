@@ -4,25 +4,26 @@ from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from smtplib import SMTP
     from typing import Self
 
+    from ..tokens import Token
 
-class SMTPCreator(metaclass=ABCMeta):
-    """A SMTP creator interface."""
+
+class TokenCreator(metaclass=ABCMeta):
+    """A token creator interface."""
 
     @abstractmethod
-    def create(self: Self) -> SMTP:
+    def create(self: Self) -> Token:
         """
-        Creates an SMTP instance.
+        Creates a token.
 
-        :raises NotImplementedError: Must to be implemented.
-        :return: A SMTP instance.
-        :rtype: SMTP
+        :raises NotImplementedError: Must to be implemented
+        :return: A token.
+        :rtype: Token
         """
         raise NotImplementedError(
             (
                 f"A `{__name__}` method of the `{self.__class__.__name__}` "
-                "interface must be implemented"
+                f"must be implemented"
             )
         )

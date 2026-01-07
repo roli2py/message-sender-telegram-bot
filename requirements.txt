@@ -1,1 +1,7 @@
+# Telegram API
 python-telegram-bot ~= 22.5
+
+# RDB
+sqlalchemy ~= 2.0.45
+mysqlclient ~= 2.2.7
+alembic ~= 1.17.2 
