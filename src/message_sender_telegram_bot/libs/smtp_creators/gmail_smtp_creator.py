@@ -22,6 +22,15 @@ class GmailSMTPCreator(SMTPCreator):
     __port: int = 465
 
     def __init__(self: Self, login: str, password: str) -> None:
+        """
+        Creates a gmail SMTP creator.
+
+        :param login: An email that represents a SMTP login for gmail.
+        :type login: str
+        :param password: An app password that represents a SMTP password
+                         for gmail.
+        :type password: str
+        """
         self.__login: str = login
         self.__password: str = password
 

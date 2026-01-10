@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Sphinx
+sphinx ~= 9.1.0

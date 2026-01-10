@@ -15,8 +15,13 @@ class Token(metaclass=ABCMeta):
         """
         Returns a token.
 
-        :raises NotImplementedError: Must to be implemented.
         :return: A token.
         :rtype: str
+        :raises NotImplementedError: Must to be implemented.
         """
-        raise NotImplementedError
+        raise NotImplementedError(
+            (
+                f"A {__name__} method of the {self.__class__.__name__} "
+                f"interface must be implemented"
+            )
+        )

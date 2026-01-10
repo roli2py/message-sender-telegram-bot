@@ -17,7 +17,7 @@ class TokenCreator(metaclass=ABCMeta):
         """
         Creates a token.
 
-        :raises NotImplementedError: Must to be implemented
+        :raises NotImplementedError: Must to be implemented.
         :return: A token.
         :rtype: Token
         """

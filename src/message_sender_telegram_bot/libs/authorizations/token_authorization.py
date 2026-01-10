@@ -21,6 +21,9 @@ class TokenAuthorization(Authorization):
     def __init__[TokenType: Token](
         self: Self, valid_tokens: set[TokenType], token: TokenType
     ) -> None:
+        """
+        Creates a token authorization.
+        """
         self.__valid_tokens = valid_tokens
         self.__token = token
 

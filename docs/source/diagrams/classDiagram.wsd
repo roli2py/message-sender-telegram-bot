@@ -1,0 +1,164 @@
+@startuml classDiagram
+class None <<primitive>>
+interface Sender {
+    + send(data: String): None
+}
+class EmailSender {
+    - smtp: SMTP
+    - from_addr: String
+    - to_addr: String
+    + EmailSender(smpt: SMTP)
+}
+class SMTP
+interface SMTPCreator {
+    + create(): SMTP
+}
+class GmailSMTPCreator {
+    - login: String
+    - password: String
+    + GmailSMTPCreator(login: String, password: String)
+}
+class set<T>
+interface Authorization {
+    + authorize(): Boolean
+}
+class TokenAuthorization<TokenType : Token> {
+    - valid_tokens: set<TokenType>
+    - token: TokenType
+    + TokenAuthorization(valid_tokens: set<TokenType>, token: TokenType)
+    + authorize(): Boolean
+}
+interface Token {
+    + get(): String
+}
+class HexToken {
+    - token: String
+    + HexToken(token: String)
+    + get(): String
+}
+interface TokenGenerator {
+    + create(): Token
+}
+class HexTokenGenerator {
+    + create(): Token
+}
+class DeclarativeBase
+class Base
+class ValidToken {
+    + __tablename__: String = "valid_token"
+    + id_: Mapped<UUID>
+    + token: Mapped<String>
+}
+class User {
+    + __tablename__: String = "user"
+    + id_: Mapped<UUID>
+    + user_id: Mapped<Integer>
+    + token: Mapped<String> [0..1]
+    + is_authorizing: Mapped<Boolean>
+}
+class Mapped<T>
+class UUID
+class Session
+interface DBItemGetter {
+    + get(): Base [0..1]
+}
+interface AbstractDBUserManipulator {
+    + get(): User [0..1]
+    + create(): User
+    + get_authorizing_status(): Boolean
+    + get_token(): String [0..1]
+    + set_authorizing_status(is_authorizing: Boolean): None
+    + set_token(token: String): None
+    + clear_token(): None
+}
+class DBUserManipulator {
+    - db_session: Session
+    - user_id: Integer [0..1]
+    - db_user: User [0..1]
+    + DBUserManipulator(db_session: Session, user_id: Integer = None, db_user: User = None)
+    + get(): User [0..1]
+    + create(): User
+    + get_authorizing_status(): Boolean
+    + get_token(): String [0..1]
+    + set_authorizing_status(is_authorizing: Boolean): None
+    + set_token(token: String): None
+    + clear_token(): None
+}
+class DBValidTokenGetter {
+    - db_session: Session
+    - token: String
+    + DBValidTokenGetter(db_session: Session, token: String)
+    + get(): ValidToken [0..1]
+}
+
+note left of None
+    Indicating a lack of the value
+endnote
+note left of SMTP
+    An `SMTP` class from
+    a `smtplib` standard library
+endnote
+note left of set
+    An Python's unordered
+    collection of distinct
+    hashable objects.
+    
+    T — Value Type
+endnote
+note right of DeclarativeBase
+    A SQLAlchemy's class
+    which needs to be inherited
+    to make a base for a
+    declarative mapping
+endnote
+note right of Mapped
+    A SQLAlchemy's class
+    that represents a database
+    column type
+endnote
+note right of UUID
+    A Python's UUID class
+endnote
+note left of Session
+    A SQLAlchemy's class
+    that provides a control
+    of the database tables
+    by the ORM classes
+endnote
+note right of DBUserManipulator::DBUserManipulator
+    There is no reason to
+    supply both user ID and
+    DB user, because the
+    class creates a DB user
+    from a user ID or a
+    client directly provides
+    a DB user; so the
+    client must provide
+    either a user ID or a DB
+    user
+endnote
+
+None <-- Sender
+Sender <|.. EmailSender
+EmailSender o-- SMTP
+SMTP <-- SMTPCreator
+SMTPCreator <|.. GmailSMTPCreator
+Authorization <|.. TokenAuthorization
+set <-- TokenAuthorization
+Token <-- TokenAuthorization
+Token <|.. HexToken
+TokenGenerator <|.. HexTokenGenerator
+Token <-- TokenGenerator
+Token <-- HexTokenGenerator
+DeclarativeBase <|-- Base
+Base <|-- ValidToken
+Base <|-- User
+Mapped <-- ValidToken
+UUID <-- ValidToken
+Mapped <-- User
+UUID <-- User
+DBItemGetter <|-- AbstractDBUserManipulator
+AbstractDBUserManipulator <|.. DBUserManipulator
+Session <-- DBUserManipulator
+DBItemGetter <|.. DBValidTokenGetter
+@enduml

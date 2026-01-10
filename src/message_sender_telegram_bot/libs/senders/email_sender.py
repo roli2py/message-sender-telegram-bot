@@ -18,6 +18,16 @@ class EmailSender(Sender):
     """
 
     def __init__(self: Self, smtp: SMTP, from_addr: str, to_addr: str) -> None:
+        """
+        Creates an email sender.
+
+        :param smtp: An SMTP object.
+        :type smtp: SMTP
+        :param from_addr: A "From:" email address.
+        :type from_addr: str
+        :param to_addr: A "To:" email address.
+        :type to_addr: str
+        """
         self.__smtp: SMTP = smtp
         self.__from_addr: str = from_addr
         self.__to_addr: str = to_addr

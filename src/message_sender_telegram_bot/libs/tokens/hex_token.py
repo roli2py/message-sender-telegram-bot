@@ -23,7 +23,7 @@ class HexToken(Token):
 
         :param token: A supposed token.
         :type token: str
-        :raises ValueError: A token contains not-compitable symbols
+        :raises ValueError: A token contains not-compitable symbols.
         """
         if search(r"[^0-9a-fA-F]", token) is not None:
             raise ValueError(

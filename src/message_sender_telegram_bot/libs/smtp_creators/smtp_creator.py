@@ -16,13 +16,13 @@ class SMTPCreator(metaclass=ABCMeta):
         """
         Creates an SMTP instance.
 
-        :raises NotImplementedError: Must to be implemented.
         :return: A SMTP instance.
         :rtype: SMTP
+        :raises NotImplementedError: Must to be implemented.
         """
         raise NotImplementedError(
             (
                 f"A `{__name__}` method of the `{self.__class__.__name__}` "
-                "interface must be implemented"
+                f"interface must be implemented"
             )
         )

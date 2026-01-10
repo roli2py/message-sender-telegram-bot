@@ -15,9 +15,9 @@ class Authorization(metaclass=ABCMeta):
         """
         Initializes an authorization.
 
-        :raises NotImplementedError: Must be implemented.
         :return: A success of the authorization.
         :rtype: bool
+        :raises NotImplementedError: Must be implemented.
         """
         raise NotImplementedError(
             (

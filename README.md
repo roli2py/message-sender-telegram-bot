@@ -19,25 +19,38 @@ cd message-sender-telegram-bot
 pip install -r requirements.txt
 ```
 
-4. Duplicate the `example.env` file and name it to `.env`:
+4. Fill a `sqlalchemy.url` property in the `alembic.ini` file:
+```ini
+# ...
+# replace the placeholders to appropriate data
+sqlalchemy.url = mysql+mysqldb://user:pass@host:port/dbname
+# ...
+```
+
+5. Migrate the database by `alembic`:
+```bash
+alembic upgrade head
+```
+
+5. Duplicate the `example.env` file and name it to `.env`:
 ```bash
 cp example.env .env
 ```
 
-5. Fill the `.env` file with the appropriate data
+6. Fill the `.env` file with the appropriate data
 
-6. Export the `.env` file to your environment:
+7. Export the `.env` file to your environment:
 ```bash
 set -a && source .env && set +a
 ```
 Reference: https://gist.github.com/mihow/9c7f559807069a03e302605691f85572
 
-7. Navigate to the project's package:
+8. Navigate to the project's package:
 ```bash
 cd src/message_sender_telegram_bot
 ```
 
-8. Run the `main.py` file:
+9. Run the `main.py` file:
 ```bash
 python3 main.py
 ```
@@ -54,9 +67,9 @@ git clone https://github.com/roli2py/message-sender-telegram-bot
 cd message-sender-telegram-bot
 ```
 
-3. Install the development dependencies:
+3. Install the project's package in an editable mode with the `dev` deps:
 ```bash
-pip install -r requirements-dev.txt
+pip install -e .[dev]
 ```
 
 4. Start to develop :)
@@ -66,7 +79,7 @@ pip install -r requirements-dev.txt
 make
 ```
 
-6. To run the project, see "[Running](#running)"
+6. To run the project, see "[Running](#running)" from a fourth to ninth clause.
 
 If you want, you can start the specific action:
 ```bash

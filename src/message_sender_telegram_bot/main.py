@@ -58,54 +58,7 @@ email_sender: libs.EmailSender = libs.EmailSender(
 # TODO make an admin panel to generate the tokens
 
 
-# TODO move the algorithm to an another place
-# Handler that authorize a user
-
-
-"""
-# Before
-async def start(...):
-    chat = ...
-    user = ...
-
-    if (chat or user) == None:
-        stop
-    
-    get supposed_db_user where db_user.user_id == user.id from db
-    
-    if supposed_db_user != User:
-        stop
-    
-    db_user = supposed_db_user
-
-    get is_authorizing from db_user
-
-    if is_authorizing:
-        stop
-    
-    get supposed_token from db_user
-
-    if supposed_token is null:
-        stop
-    
-    token = supposed_token
-
-    get supposed_valid_token where valid_token.token == token from db
-
-    if supposed_valid_token is null:
-        stop
-
-# After
-async def start(...):
-    chat = ...
-    user = ...
-
-    if (chat or user) == None:
-        stop
-"""
-
-
-# TODO move the functinos to another places
+# TODO move the functions to another places
 def get_db_user_authorizing_status(db_user: libs.User) -> bool:
     with compiled_session() as session:
         session.add(db_user)
@@ -174,6 +127,7 @@ def get_valid_token(token: str) -> libs.ValidToken | None:
     return valid_token_or_none
 
 
+# Handler that authorize a user
 async def start(
     update: telegram.Update,
     ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore

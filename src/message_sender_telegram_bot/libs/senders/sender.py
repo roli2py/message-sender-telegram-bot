@@ -17,7 +17,7 @@ class Sender(metaclass=ABCMeta):
 
         :param data: Data to send.
         :type data: str
-        :raises NotImplementedError: Must to be implemented
+        :raises NotImplementedError: Must to be implemented.
         """
         raise NotImplementedError(
             f"The `send` method of the `Sender` interface must be implemented"
