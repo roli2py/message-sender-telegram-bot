@@ -3,12 +3,10 @@ from __future__ import annotations
 from os import environ
 from smtplib import SMTP
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
 import telegram
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql.selectable import Select
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -58,75 +56,6 @@ email_sender: libs.EmailSender = libs.EmailSender(
 # TODO make an admin panel to generate the tokens
 
 
-# TODO move the functions to another places
-def get_db_user_authorizing_status(db_user: libs.User) -> bool:
-    with compiled_session() as session:
-        session.add(db_user)
-        is_user_authorizing: bool = db_user.is_authorizing
-
-    return is_user_authorizing
-
-
-def set_db_user_authorizing_status(
-    db_user: libs.User, is_authorizing: bool
-) -> None:
-    with compiled_session() as session:
-        session.add(db_user)
-        db_user.is_authorizing = is_authorizing
-        session.commit()
-
-
-def get_db_user(user_id: int) -> libs.User | None:
-    with compiled_session() as session:
-        select_user_stmt: Select[tuple[libs.User]] = select(libs.User).where(
-            libs.User.user_id == user_id
-        )
-        db_user_or_none: libs.User | None = session.execute(
-            select_user_stmt
-        ).scalar_one_or_none()
-
-    return db_user_or_none
-
-
-def create_db_user(user_id: int) -> None:
-    with compiled_session() as session:
-        new_db_user: libs.User = libs.User(
-            id_=uuid4(),
-            user_id=user_id,
-            token=None,
-            is_authorizing=True,
-        )
-        session.add(new_db_user)
-        session.commit()
-
-
-def get_token_of_db_user(db_user: libs.User) -> str | None:
-    with compiled_session() as session:
-        session.add(db_user)
-        token_or_none: str | None = db_user.token
-
-    return token_or_none
-
-
-def set_token_of_db_user(db_user: libs.User, token: str | None) -> None:
-    with compiled_session() as session:
-        session.add(db_user)
-        db_user.token = token
-        session.commit()
-
-
-def get_valid_token(token: str) -> libs.ValidToken | None:
-    with compiled_session() as session:
-        select_token_stmt: Select[tuple[libs.ValidToken]] = select(
-            libs.ValidToken
-        ).where(libs.ValidToken.token == token)
-        valid_token_or_none: libs.ValidToken | None = session.execute(
-            select_token_stmt
-        ).scalar_one_or_none()
-
-    return valid_token_or_none
-
-
 # Handler that authorize a user
 async def start(
     update: telegram.Update,
@@ -138,37 +67,66 @@ async def start(
     if chat is None or user is None:
         return
 
-    db_user: libs.User | None = get_db_user(user.id)
+    with compiled_session() as session:
+        db_user: libs.User | None = libs.DBUserManipulator(
+            session, user_id=user.id
+        ).get()
 
     if not isinstance(db_user, libs.User):
-        create_db_user(user.id)
+        with compiled_session() as session:
+            new_db_user: libs.User = libs.DBUserManipulator(
+                session, user_id=user.id
+            ).create()
+            session.add(new_db_user)
+            session.commit()
+
         _ = await chat.send_message("Enter the token")
 
         return
 
-    is_user_authorizing: bool = get_db_user_authorizing_status(db_user)
+    with compiled_session() as session:
+        session.add(db_user)
+        is_user_authorizing: bool = libs.DBUserManipulator(
+            session, db_user=db_user
+        ).get_authorizing_status()
 
     if is_user_authorizing:
         _ = await chat.send_message("Enter the token")
         return
 
-    token_or_none: str | None = get_token_of_db_user(db_user)
+    with compiled_session() as session:
+        session.add(db_user)
+        token: str | None = libs.DBUserManipulator(
+            session, db_user=db_user
+        ).get_token()
 
-    if not isinstance(token_or_none, str):
-        set_db_user_authorizing_status(db_user, True)
+    if not isinstance(token, str):
+        with compiled_session() as session:
+            session.add(db_user)
+            libs.DBUserManipulator(
+                session, db_user=db_user
+            ).set_authorizing_status(True)
+            session.commit()
 
         _ = await chat.send_message(
             "Your token is expired. Please, enter a new token"
         )
         return
 
-    token: str = token_or_none
+    with compiled_session() as session:
+        valid_token: libs.ValidToken | None = libs.DBValidTokenGetter(
+            session, token
+        ).get()
 
-    valid_token_or_none: libs.ValidToken | None = get_valid_token(token)
-
-    if not isinstance(valid_token_or_none, libs.ValidToken):
-        set_token_of_db_user(db_user, None)
-        set_db_user_authorizing_status(db_user, True)
+    if not isinstance(valid_token, libs.ValidToken):
+        with compiled_session() as session:
+            session.add(db_user)
+            db_user_manipulator: libs.DBUserManipulator = (
+                libs.DBUserManipulator(session, db_user=db_user)
+            )
+            db_user_manipulator.clear_token()
+            db_user_manipulator.set_authorizing_status(True)
+            session.commit()
 
         _ = await chat.send_message(
             "Your token is expired. Please, enter a new token"
@@ -195,7 +153,10 @@ async def send(
     if message_text is None:
         return
 
-    db_user: libs.User | None = get_db_user(user.id)
+    with compiled_session() as session:
+        db_user: libs.User | None = libs.DBUserManipulator(
+            session, user_id=user.id
+        ).get()
 
     if not isinstance(db_user, libs.User):
         _ = await chat.send_message(
@@ -206,7 +167,11 @@ async def send(
         )
         return
 
-    is_user_authorizing: bool = get_db_user_authorizing_status(db_user)
+    with compiled_session() as session:
+        session.add(db_user)
+        is_user_authorizing: bool = libs.DBUserManipulator(
+            session, db_user=db_user
+        ).get_authorizing_status()
 
     if is_user_authorizing:
         try:
@@ -220,17 +185,16 @@ async def send(
             )
             return
 
-        valid_token_or_none: libs.ValidToken | None = get_valid_token(
-            hex_token.get()
-        )
+        with compiled_session() as session:
+            valid_token: libs.ValidToken | None = libs.DBValidTokenGetter(
+                session, hex_token.get()
+            ).get()
 
-        if not isinstance(valid_token_or_none, libs.ValidToken):
+        if not isinstance(valid_token, libs.ValidToken):
             _ = await chat.send_message(
                 "The token is not valid. Please, provide an another token"
             )
             return
-
-        valid_token: libs.ValidToken = valid_token_or_none
 
         if hex_token.get() != valid_token.token:
             _ = await chat.send_message(
@@ -240,8 +204,14 @@ async def send(
 
         # On this step, the user is pass the challenges, so the user is
         # authorized
-        set_token_of_db_user(db_user, hex_token.get())
-        set_db_user_authorizing_status(db_user, False)
+        with compiled_session() as session:
+            session.add(db_user)
+            db_user_manipulator: libs.DBUserManipulator = (
+                libs.DBUserManipulator(session, db_user=db_user)
+            )
+            db_user_manipulator.set_token(hex_token.get())
+            db_user_manipulator.set_authorizing_status(False)
+            session.commit()
 
         _ = await chat.send_message("You're authorized")
     else:

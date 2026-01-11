@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final, override
+from typing import TYPE_CHECKING, override
 
 from ..tokens import Token
 from .authorization import Authorization
@@ -9,7 +9,6 @@ if TYPE_CHECKING:
     from typing import Self
 
 
-@final
 class TokenAuthorization(Authorization):
     """
     An authorization by a token.
