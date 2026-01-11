@@ -96,11 +96,11 @@ async def start(
 
     with compiled_session() as session:
         session.add(db_user)
-        token: str | None = libs.DBUserManipulator(
+        valid_token: libs.ValidToken | None = libs.DBUserManipulator(
             session, db_user=db_user
-        ).get_token()
+        ).get_valid_token()
 
-    if not isinstance(token, str):
+    if not isinstance(valid_token, libs.ValidToken):
         with compiled_session() as session:
             session.add(db_user)
             libs.DBUserManipulator(
@@ -112,25 +112,6 @@ async def start(
             "Your token is expired. Please, enter a new token"
         )
         return
-
-    with compiled_session() as session:
-        valid_token: libs.ValidToken | None = libs.DBValidTokenGetter(
-            session, token
-        ).get()
-
-    if not isinstance(valid_token, libs.ValidToken):
-        with compiled_session() as session:
-            session.add(db_user)
-            db_user_manipulator: libs.DBUserManipulator = (
-                libs.DBUserManipulator(session, db_user=db_user)
-            )
-            db_user_manipulator.clear_token()
-            db_user_manipulator.set_authorizing_status(True)
-            session.commit()
-
-        _ = await chat.send_message(
-            "Your token is expired. Please, enter a new token"
-        )
 
     _ = await chat.send_message("You're already authorized")
 
@@ -186,6 +167,7 @@ async def send(
             return
 
         with compiled_session() as session:
+            session.add(db_user)
             valid_token: libs.ValidToken | None = libs.DBValidTokenGetter(
                 session, hex_token.get()
             ).get()
@@ -209,7 +191,7 @@ async def send(
             db_user_manipulator: libs.DBUserManipulator = (
                 libs.DBUserManipulator(session, db_user=db_user)
             )
-            db_user_manipulator.set_token(hex_token.get())
+            db_user_manipulator.set_valid_token(valid_token)
             db_user_manipulator.set_authorizing_status(False)
             session.commit()
 

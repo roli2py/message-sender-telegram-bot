@@ -91,3 +91,8 @@ Available targets:
 2. `format` — Formats the project by `isort` and `black`.
 3. `test` — Starts the unittests by `pytest`.
 
+### UML class diagram
+
+The project is provided with the UML class diagram, made by [PlantUML](https://plantuml.com/). You can use it, if you need.
+
+When you're adding or changing a structure of the project, make corresponding changes to the UML class diagram.

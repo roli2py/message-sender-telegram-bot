@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from ..database_tables import User
+from ..database_tables import User, ValidToken
 from .abstract_db_user_manipulator import AbstractDBUserManipulator
 
 if TYPE_CHECKING:
@@ -115,8 +115,9 @@ class DBUserManipulator(AbstractDBUserManipulator):
         new_db_user: User = User(
             id_=uuid4(),
             user_id=user_id,
-            token=None,
             is_authorizing=True,
+            token_id=None,
+            valid_token=None,
         )
 
         return new_db_user
@@ -141,12 +142,13 @@ class DBUserManipulator(AbstractDBUserManipulator):
         return is_user_authorizing
 
     @override
-    def get_token(self: Self) -> str | None:
+    def get_valid_token(self: Self) -> ValidToken | None:
         """
-        Gets a DB user's token. That is, gets a `token` column.
+        Gets a DB user's DB valid token. That is, gets a `ValidToken`
+        object.
 
-        :return: A DB user's token or None, if the DB user's token is
-                 absent.
+        :return: A DB user's DB valid token or None, if the DB user's DB
+                 valid token is absent.
         :rtype: str | None
         """
         db_user: User | None = self.__db_user
@@ -154,9 +156,9 @@ class DBUserManipulator(AbstractDBUserManipulator):
         if db_user is None:
             raise ValueError("A DB user is absent")
 
-        token: str | None = db_user.token
+        valid_token: ValidToken | None = db_user.valid_token
 
-        return token
+        return valid_token
 
     @override
     def set_authorizing_status(self: Self, is_authorizing: bool) -> None:
@@ -176,31 +178,32 @@ class DBUserManipulator(AbstractDBUserManipulator):
         db_user.is_authorizing = is_authorizing
 
     @override
-    def set_token(self: Self, token: str) -> None:
+    def set_valid_token(self: Self, valid_token: ValidToken) -> None:
         """
-        Sets a DB user's authorizing status. That is, sets an
-        `is_authorizing` column to the `is_authorizing` argument's
-        value.
+        Sets a DB user's DB valid token. That is, sets a `token_id` to
+        a corresponding row in the `valid_token` table. This means, that
+        the user claims the token.
 
-        :param is_authorizing: An authorizing status to set.
-        :type is_authorizing: bool
+        :param token: A DB valid token to set.
+        :type token: str
         """
         db_user: User | None = self.__db_user
 
         if db_user is None:
             raise ValueError("A DB user is absent")
 
-        db_user.token = token
+        db_user.valid_token = valid_token
 
     @override
-    def clear_token(self: Self) -> None:
+    def clear_valid_token(self: Self) -> None:
         """
-        Clears a DB user's token. That is, sets a `token` column to
-        `None`. This means, that the user loses the claim to the token.
+        Clears a DB user's DB valid token. That is, sets a `token_id`
+        column to `None`. This means, that the user loses the claim to
+        the token.
         """
         db_user: User | None = self.__db_user
 
         if db_user is None:
             raise ValueError("A DB user is absent")
 
-        db_user.token = None
+        db_user.valid_token = None

@@ -66,10 +66,10 @@ interface AbstractDBUserManipulator {
     + get(): User [0..1]
     + create(): User
     + get_authorizing_status(): Boolean
-    + get_token(): String [0..1]
+    + get_valid_token(): ValidToken [0..1]
     + set_authorizing_status(is_authorizing: Boolean): None
-    + set_token(token: String): None
-    + clear_token(): None
+    + set_valid_token(valid_token: ValidToken): None
+    + clear_valid_token(): None
 }
 class DBUserManipulator {
     - db_session: Session
@@ -79,10 +79,10 @@ class DBUserManipulator {
     + get(): User [0..1]
     + create(): User
     + get_authorizing_status(): Boolean
-    + get_token(): String [0..1]
+    + get_valid_token(): ValidToken [0..1]
     + set_authorizing_status(is_authorizing: Boolean): None
-    + set_token(token: String): None
-    + clear_token(): None
+    + set_valid_token(valid_token: ValidToken): None
+    + clear_valid_token(): None
 }
 class DBValidTokenGetter {
     - db_session: Session

@@ -3,11 +3,12 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from typing import TYPE_CHECKING, override
 
-from ..database_tables import User
 from ..db_item_getter import DBItemGetter
 
 if TYPE_CHECKING:
     from typing import Self
+
+    from ..database_tables import User, ValidToken
 
 
 class AbstractDBUserManipulator(DBItemGetter, metaclass=ABCMeta):
@@ -63,12 +64,12 @@ class AbstractDBUserManipulator(DBItemGetter, metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def get_token(self: Self) -> str | None:
+    def get_valid_token(self: Self) -> ValidToken | None:
         """
-        Gets a DB user's token.
+        Gets a DB user's DB valid token.
 
-        :return: A DB user's token or None, if the DB user's token is
-                 absent.
+        :return: A DB user's DB valid token or None, if the DB user's
+                 valid token is absent.
         :rtype: str | None
         :raises NotImplementedError: Must be implemented.
         """
@@ -96,12 +97,12 @@ class AbstractDBUserManipulator(DBItemGetter, metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def set_token(self: Self, token: str) -> None:
+    def set_valid_token(self: Self, valid_token: ValidToken) -> None:
         """
-        Sets a DB user's token. This means, that the user claims the
-        token.
+        Sets a DB user's DB valid token. This means, that the user
+        claims the token.
 
-        :param token: A token to set.
+        :param token: A DB valid token to set.
         :type token: str
         :raises NotImplementedError: Must be implemented.
         """
@@ -113,10 +114,10 @@ class AbstractDBUserManipulator(DBItemGetter, metaclass=ABCMeta):
         )
 
     @abstractmethod
-    def clear_token(self: Self) -> None:
+    def clear_valid_token(self: Self) -> None:
         """
-        Clears a DB user's token. This means, that the user loses the
-        claim to the token.
+        Clears a DB user's DB valid token. This means, that the user
+        loses the claim to the token.
 
         :raises NotImplementedError: Must be implemented.
         """

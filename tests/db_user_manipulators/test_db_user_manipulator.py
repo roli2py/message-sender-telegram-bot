@@ -6,7 +6,7 @@ from pytest import fixture, raises
 from sqlalchemy import Result, Select
 from sqlalchemy.orm import Session
 
-from libs import DBUserManipulator, User
+from libs import DBUserManipulator, User, ValidToken
 
 user_id = 1234567
 token = "0123456789abcdef"
@@ -80,7 +80,11 @@ def db_user_manipulator_with_a_user_id(
 
 @fixture
 @patch(
-    "libs.User", spec=User, user_id=user_id, token=token, is_authorizing=True
+    "libs.User",
+    spec=User,
+    user_id=user_id,
+    is_authorizing=True,
+    valid_token=MagicMock(spec=ValidToken),
 )
 @patch(
     "sqlalchemy.orm.Session",
@@ -172,19 +176,21 @@ def test_a_get_authorizing_status_method_of_db_user_manipulator_with_a_db_user(
     assert isinstance(is_user_authorizing, bool)
 
 
-def test_a_get_token_method_of_db_user_manipulator_with_a_user_id(
+def test_a_get_valid_token_method_of_db_user_manipulator_with_a_user_id(
     db_user_manipulator_with_a_user_id: DBUserManipulator,
 ) -> None:
     with raises(ValueError, match="A DB user is absent"):
-        _ = db_user_manipulator_with_a_user_id.get_token()
+        _ = db_user_manipulator_with_a_user_id.get_valid_token()
 
 
-def test_a_get_token_method_of_db_user_manipulator_with_a_db_user(
+def test_a_get_valid_token_method_of_db_user_manipulator_with_a_db_user(
     db_user_manipulator_with_a_db_user: DBUserManipulator,
 ) -> None:
-    token: str | None = db_user_manipulator_with_a_db_user.get_token()
+    valid_token: ValidToken | None = (
+        db_user_manipulator_with_a_db_user.get_valid_token()
+    )
 
-    assert isinstance(token, str)
+    assert isinstance(valid_token, ValidToken)
 
 
 def test_a_set_authorizing_status_method_of_db_user_manipulator_with_a_user_id(
@@ -200,27 +206,33 @@ def test_a_set_authorizing_status_method_of_db_user_manipulator_with_a_db_user(
     db_user_manipulator_with_a_db_user.set_authorizing_status(True)
 
 
-def test_a_set_token_method_of_db_user_manipulator_with_a_user_id(
+@patch("libs.ValidToken", spec=ValidToken)
+def test_a_set_valid_token_method_of_db_user_manipulator_with_a_user_id(
+    valid_token_mock: ValidToken,
     db_user_manipulator_with_a_user_id: DBUserManipulator,
 ) -> None:
     with raises(ValueError, match="A DB user is absent"):
-        _ = db_user_manipulator_with_a_user_id.set_token(token)
+        _ = db_user_manipulator_with_a_user_id.set_valid_token(
+            valid_token_mock
+        )
 
 
-def test_a_set_token_method_of_db_user_manipulator_with_a_db_user(
+@patch("libs.ValidToken", spec=ValidToken)
+def test_a_set_valid_token_method_of_db_user_manipulator_with_a_db_user(
+    valid_token_mock: ValidToken,
     db_user_manipulator_with_a_db_user: DBUserManipulator,
 ) -> None:
-    db_user_manipulator_with_a_db_user.set_token(token)
+    db_user_manipulator_with_a_db_user.set_valid_token(valid_token_mock)
 
 
-def test_a_clear_token_method_of_db_user_manipulator_with_a_user_id(
+def test_a_clear_valid_token_method_of_db_user_manipulator_with_a_user_id(
     db_user_manipulator_with_a_user_id: DBUserManipulator,
 ) -> None:
     with raises(ValueError, match="A DB user is absent"):
-        db_user_manipulator_with_a_user_id.clear_token()
+        db_user_manipulator_with_a_user_id.clear_valid_token()
 
 
-def test_a_clear_token_method_of_db_user_manipulator_with_a_db_user(
+def test_a_clear_valid_token_method_of_db_user_manipulator_with_a_db_user(
     db_user_manipulator_with_a_db_user: DBUserManipulator,
 ) -> None:
-    db_user_manipulator_with_a_db_user.clear_token()
+    db_user_manipulator_with_a_db_user.clear_valid_token()

@@ -1,8 +1,9 @@
 from typing import Self, override
+from unittest.mock import patch
 
 from pytest import fixture, raises
 
-from libs import AbstractDBUserManipulator, User
+from libs import AbstractDBUserManipulator, User, ValidToken
 
 
 @fixture
@@ -28,9 +29,9 @@ def abstract_db_user_manipulator_wrapper() -> AbstractDBUserManipulator:
             )
 
         @override
-        def get_token(self: Self) -> str | None:
+        def get_valid_token(self: Self) -> ValidToken | None:
             return (
-                super().get_token()  # pyright: ignore[reportAbstractUsage]  # type: ignore
+                super().get_valid_token()  # pyright: ignore[reportAbstractUsage]  # type: ignore
             )
 
         @override
@@ -40,15 +41,15 @@ def abstract_db_user_manipulator_wrapper() -> AbstractDBUserManipulator:
             )
 
         @override
-        def set_token(self: Self, token: str) -> None:
-            return super().set_token(  # pyright: ignore[reportAbstractUsage]  # type: ignore
-                token
+        def set_valid_token(self: Self, valid_token: ValidToken) -> None:
+            return super().set_valid_token(  # pyright: ignore[reportAbstractUsage]  # type: ignore
+                valid_token
             )
 
         @override
-        def clear_token(self: Self) -> None:
+        def clear_valid_token(self: Self) -> None:
             return (
-                super().clear_token()  # pyright: ignore[reportAbstractUsage]  # type: ignore
+                super().clear_valid_token()  # pyright: ignore[reportAbstractUsage]  # type: ignore
             )
 
     return AbstractDBUserManipulatorWrapper()
@@ -84,11 +85,11 @@ def test_disallow_of_a_direct_using_of_a_get_authorizing_status_method(
         _ = abstract_db_user_manipulator_wrapper.get_authorizing_status()
 
 
-def test_disallow_of_a_direct_using_of_a_get_token_method(
+def test_disallow_of_a_direct_using_of_a_get_valid_token_method(
     abstract_db_user_manipulator_wrapper: AbstractDBUserManipulator,
 ) -> None:
     with raises(NotImplementedError):
-        _ = abstract_db_user_manipulator_wrapper.get_token()
+        _ = abstract_db_user_manipulator_wrapper.get_valid_token()
 
 
 def test_disallow_of_a_direct_using_of_a_set_authorizing_status_method(
@@ -98,15 +99,19 @@ def test_disallow_of_a_direct_using_of_a_set_authorizing_status_method(
         _ = abstract_db_user_manipulator_wrapper.set_authorizing_status(True)
 
 
-def test_disallow_of_a_direct_using_of_a_set_token_method(
+@patch("libs.ValidToken")
+def test_disallow_of_a_direct_using_of_a_set_valid_token_method(
+    valid_token_mock: ValidToken,
     abstract_db_user_manipulator_wrapper: AbstractDBUserManipulator,
 ) -> None:
     with raises(NotImplementedError):
-        _ = abstract_db_user_manipulator_wrapper.set_token("TOKEN")
+        _ = abstract_db_user_manipulator_wrapper.set_valid_token(
+            valid_token_mock
+        )
 
 
-def test_disallow_of_a_direct_using_of_a_clear_token_method(
+def test_disallow_of_a_direct_using_of_a_clear_valid_token_method(
     abstract_db_user_manipulator_wrapper: AbstractDBUserManipulator,
 ) -> None:
     with raises(NotImplementedError):
-        _ = abstract_db_user_manipulator_wrapper.clear_token()
+        _ = abstract_db_user_manipulator_wrapper.clear_valid_token()
