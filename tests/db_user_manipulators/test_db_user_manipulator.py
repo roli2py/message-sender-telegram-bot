@@ -85,6 +85,7 @@ def db_user_manipulator_with_a_user_id(
     user_id=user_id,
     is_authorizing=True,
     valid_token=MagicMock(spec=ValidToken),
+    is_owner=False,
 )
 @patch(
     "sqlalchemy.orm.Session",
@@ -236,3 +237,19 @@ def test_a_clear_valid_token_method_of_db_user_manipulator_with_a_db_user(
     db_user_manipulator_with_a_db_user: DBUserManipulator,
 ) -> None:
     db_user_manipulator_with_a_db_user.clear_valid_token()
+
+
+def test_a_get_owner_status_method_of_db_user_manipulator_with_a_user_id(
+    db_user_manipulator_with_a_user_id: DBUserManipulator,
+) -> None:
+    with raises(ValueError, match="A DB user is absent"):
+        _ = db_user_manipulator_with_a_user_id.get_owner_status()
+
+
+def test_a_get_owner_status_method_of_db_user_manipulator_with_a_db_user(
+    db_user_manipulator_with_a_db_user: DBUserManipulator,
+) -> None:
+    is_user_owner: bool = db_user_manipulator_with_a_db_user.get_owner_status()
+
+    assert isinstance(is_user_owner, bool)
+    assert not is_user_owner

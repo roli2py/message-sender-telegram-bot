@@ -41,6 +41,7 @@ class User(Base):
     valid_token: Mapped["ValidToken | None"] = relationship(
         back_populates="user"
     )
+    is_owner: Mapped[bool]
 
 
 @final

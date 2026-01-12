@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from logging import getLogger
 from typing import TYPE_CHECKING, override
 
+from ..db_item_creator import DBItemCreator
 from ..db_item_getter import DBItemGetter
 
 if TYPE_CHECKING:
@@ -15,7 +16,9 @@ if TYPE_CHECKING:
 logger: Logger = getLogger(__name__)
 
 
-class AbstractDBUserManipulator(DBItemGetter, metaclass=ABCMeta):
+class AbstractDBUserManipulator(
+    DBItemGetter, DBItemCreator, metaclass=ABCMeta
+):
     """A DB user manipulator interface."""
 
     @abstractmethod
@@ -45,6 +48,7 @@ class AbstractDBUserManipulator(DBItemGetter, metaclass=ABCMeta):
         )
 
     @abstractmethod
+    @override
     def create(self: Self) -> User:
         """
         Creates a new DB user.
@@ -177,6 +181,32 @@ class AbstractDBUserManipulator(DBItemGetter, metaclass=ABCMeta):
         Clears a DB user's DB valid token. This means, that the user
         loses the claim to the token.
 
+        :raises NotImplementedError: Must be implemented.
+        """
+        logger.critical(
+            (
+                "A `%s` method of the `%s` interface in invoked. Raising a "
+                "`NotImplementedError` exception..."
+            ),
+            __name__,
+            self.__class__.__name__,
+            exc_info=True,
+        )
+        raise NotImplementedError(
+            (
+                f"A `{__name__}` method of the `{self.__class__.__name__}` "
+                f"interface must be implemented"
+            )
+        )
+
+    @abstractmethod
+    def get_owner_status(self: Self) -> bool:
+        """
+        Gets a DB user's owner status. That is, is the user owner or
+        not.
+
+        :return: A DB user's owner status.
+        :rtype: bool
         :raises NotImplementedError: Must be implemented.
         """
         logger.critical(

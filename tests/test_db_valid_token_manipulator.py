@@ -6,7 +6,7 @@ from pytest import fixture
 from sqlalchemy import Result, Select
 from sqlalchemy.orm import Session
 
-from libs import DBValidTokenGetter, ValidToken
+from libs import DBValidTokenManipulator, ValidToken
 
 # Session().execute
 db_session_execute_function_mock: MagicMock = MagicMock(
@@ -42,20 +42,22 @@ select_instance_mock: MagicMock = MagicMock(
     spec=Session,
     execute=db_session_execute_function_mock,
 )
-def db_valid_token_getter(db_session_mock: Session) -> DBValidTokenGetter:
+def db_valid_token_manipulator(
+    db_session_mock: Session,
+) -> DBValidTokenManipulator:
     token = "0123456789abcdef"
-    return DBValidTokenGetter(db_session_mock, token)
+    return DBValidTokenManipulator(db_session_mock, token)
 
 
 @patch(
-    "libs.db_valid_token_getter.select",
+    "libs.db_valid_token_manipulator.select",
     return_value=select_instance_mock,
 )
 @patch(
-    "libs.db_valid_token_getter.ValidToken",
+    "libs.db_valid_token_manipulator.ValidToken",
     spec=ValidToken,
 )
-def test_a_get_method_of_db_valid_token(
+def test_a_get_method_of_db_valid_token_manipulator(
     db_valid_token_mock: ValidToken,  # pyright: ignore[reportUnusedParameter]  # type: ignore
     select_function_mock: Callable[  # pyright: ignore[reportUnusedParameter]  # type: ignore
         ...,
@@ -65,8 +67,16 @@ def test_a_get_method_of_db_valid_token(
             ]
         ],
     ],
-    db_valid_token_getter: DBValidTokenGetter,
+    db_valid_token_manipulator: DBValidTokenManipulator,
 ) -> None:
-    db_valid_token: ValidToken | None = db_valid_token_getter.get()
+    db_valid_token: ValidToken | None = db_valid_token_manipulator.get()
+
+    assert isinstance(db_valid_token, ValidToken)
+
+
+def test_a_create_method_of_db_valid_token_manipulator(
+    db_valid_token_manipulator: DBValidTokenManipulator,
+) -> None:
+    db_valid_token: ValidToken = db_valid_token_manipulator.create()
 
     assert isinstance(db_valid_token, ValidToken)

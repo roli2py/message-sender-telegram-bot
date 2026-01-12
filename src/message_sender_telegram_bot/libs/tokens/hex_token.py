@@ -52,6 +52,10 @@ class HexToken(Token):
         logger.debug("Initialized")
 
     @override
+    def __str__(self: Self) -> str:
+        return self.get()
+
+    @override
     def get(self: Self) -> str:
         """
         Returns a hex token.

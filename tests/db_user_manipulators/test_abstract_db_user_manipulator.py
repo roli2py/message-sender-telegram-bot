@@ -52,6 +52,12 @@ def abstract_db_user_manipulator_wrapper() -> AbstractDBUserManipulator:
                 super().clear_valid_token()  # pyright: ignore[reportAbstractUsage]  # type: ignore
             )
 
+        @override
+        def get_owner_status(self: Self) -> bool:
+            return (
+                super().get_owner_status()  # pyright: ignore[reportAbstractUsage]  # type: ignore
+            )
+
     return AbstractDBUserManipulatorWrapper()
 
 
@@ -115,3 +121,10 @@ def test_disallow_of_a_direct_using_of_a_clear_valid_token_method(
 ) -> None:
     with raises(NotImplementedError):
         _ = abstract_db_user_manipulator_wrapper.clear_valid_token()
+
+
+def test_disallow_of_a_direct_using_of_a_get_owner_status_method(
+    abstract_db_user_manipulator_wrapper: AbstractDBUserManipulator,
+) -> None:
+    with raises(NotImplementedError):
+        _ = abstract_db_user_manipulator_wrapper.get_owner_status()

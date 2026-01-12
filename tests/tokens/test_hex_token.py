@@ -60,3 +60,12 @@ def test_a_get_of_a_raw_hex_token(
 
     assert isinstance(raw_hex_token, str)
     assert raw_hex_token == raw_lowercase_hex_token
+
+
+def test_a_convert_to_str_of_a_hex_token(
+    hex_token: HexToken, raw_lowercase_hex_token: str
+) -> None:
+    raw_hex_token: str = str(hex_token)
+
+    assert raw_hex_token == hex_token.get()
+    assert raw_hex_token == raw_lowercase_hex_token

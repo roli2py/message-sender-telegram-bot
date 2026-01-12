@@ -62,6 +62,9 @@ class Session
 interface DBItemGetter {
     + get(): Base [0..1]
 }
+interface DBItemCreator {
+    + create(): Base
+}
 interface AbstractDBUserManipulator {
     + get(): User [0..1]
     + create(): User
@@ -70,6 +73,7 @@ interface AbstractDBUserManipulator {
     + set_authorizing_status(is_authorizing: Boolean): None
     + set_valid_token(valid_token: ValidToken): None
     + clear_valid_token(): None
+    + get_owner_status(): Boolean
 }
 class DBUserManipulator {
     - db_session: Session
@@ -83,12 +87,22 @@ class DBUserManipulator {
     + set_authorizing_status(is_authorizing: Boolean): None
     + set_valid_token(valid_token: ValidToken): None
     + clear_valid_token(): None
+    + get_owner_status(): Boolean
 }
-class DBValidTokenGetter {
+class DBValidTokenManipulator {
     - db_session: Session
     - token: String
     + DBValidTokenGetter(db_session: Session, token: String)
     + get(): ValidToken [0..1]
+    + create(): ValidToken
+}
+interface OwnershipProver {
+    + prove(): Boolean
+}
+class UserOwnershipProver {
+    - db_user: User
+    + UserOwnershipProver(db_user_manipulator: AbstractDBUserManipulator)
+    + prove(): Boolean
 }
 
 note left of None
@@ -158,7 +172,10 @@ UUID <-- ValidToken
 Mapped <-- User
 UUID <-- User
 DBItemGetter <|-- AbstractDBUserManipulator
+DBItemCreator <|-- AbstractDBUserManipulator
 AbstractDBUserManipulator <|.. DBUserManipulator
 Session <-- DBUserManipulator
-DBItemGetter <|.. DBValidTokenGetter
+DBItemGetter <|.. DBValidTokenManipulator
+DBItemCreator <|.. DBValidTokenManipulator
+OwnershipProver <|.. UserOwnershipProver
 @enduml

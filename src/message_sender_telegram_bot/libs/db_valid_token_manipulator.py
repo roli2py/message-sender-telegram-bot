@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from logging import getLogger
 from typing import TYPE_CHECKING, override
+from uuid import uuid4
 
 from sqlalchemy import select
 
 from .database_tables import ValidToken
+from .db_item_creator import DBItemCreator
 from .db_item_getter import DBItemGetter
 
 if TYPE_CHECKING:
@@ -18,17 +20,19 @@ if TYPE_CHECKING:
 logger: Logger = getLogger(__name__)
 
 
-class DBValidTokenGetter(DBItemGetter):
+class DBValidTokenManipulator(DBItemGetter, DBItemCreator):
     """
-    A DB valid token getter.
+    A DB valid token manipulator.
 
     :param DBItemGetter: A DB item getter interface.
     :type DBItemGetter: class
+    :param DBItemCreator: A DB item creator interface.
+    :type DBItemCreator: class
     """
 
     def __init__(self: Self, db_session: Session, token: str) -> None:
         """
-        Creates a DB valid token getter.
+        Creates a DB valid token manipulator.
 
         :param db_session: A DB session.
         :type db_session: Session
@@ -74,3 +78,17 @@ class DBValidTokenGetter(DBItemGetter):
         logger.debug("Got")
 
         return valid_token
+
+    @override
+    def create(self: Self) -> ValidToken:
+        logger.debug("Starting a creation of the DB valid token...")
+
+        logger.debug("Creating a DB valid token...")
+        new_valid_token: ValidToken = ValidToken(
+            id_=uuid4(),
+            token=self.__token,
+            user=None,
+        )
+        logger.debug("Created")
+
+        return new_valid_token

@@ -120,6 +120,9 @@ class DBUserManipulator(AbstractDBUserManipulator):
         Gets a DB user by a user ID. That is, selects a DB user where a
         DB user's ID equals to a provided user ID.
 
+        After the invoke, the `db_user` is set and, therefore, can be
+        used to invoke methods that require a DB user.
+
         :return: A DB user or None, if the DB user is not found.
         :rtype: User | None
         """
@@ -164,6 +167,9 @@ class DBUserManipulator(AbstractDBUserManipulator):
         Creates a new DB user without a token and with an authorizing
         status — True by a user ID.
 
+        After the invoke, the `db_user` is set and, therefore, can be
+        used to invoke methods that require a DB user.
+
         :return: A new DB user.
         :rtype: User
         """
@@ -187,8 +193,15 @@ class DBUserManipulator(AbstractDBUserManipulator):
             is_authorizing=True,
             token_id=None,
             valid_token=None,
+            is_owner=False,
         )
         logger.debug("Created")
+
+        logger.debug(
+            "Assigning the DB user to the `__db_user` instance attribute..."
+        )
+        self.__db_user = new_db_user
+        logger.debug("Assigned")
 
         return new_db_user
 
@@ -341,3 +354,35 @@ class DBUserManipulator(AbstractDBUserManipulator):
         logger.debug("Clearing the DB valid token...")
         db_user.valid_token = None
         logger.debug("Cleared")
+
+    @override
+    def get_owner_status(self: Self) -> bool:
+        """
+        Gets a DB user's owner status. That is, is the user owner or
+        not.
+
+        :return: A DB user's owner status.
+        :rtype: bool
+        :raises NotImplementedError: Must be implemented.
+        """
+        logger.debug("Starting a getting of an owner status...")
+        db_user: User | None = self.__db_user
+
+        logger.debug("Checking for a presence of a DB user...")
+        if db_user is None:
+            logger.critical(
+                "A DB user is absent. Raising a `ValueError` exception..."
+            )
+            raise ValueError("A DB user is absent")
+        logger.debug(
+            (
+                "A DB user is present. Continuing the clearing of the DB "
+                "valid token..."
+            )
+        )
+
+        logger.debug("Getting an owner status...")
+        is_user_owner: bool = db_user.is_owner
+        logger.debug("Got")
+
+        return is_user_owner
