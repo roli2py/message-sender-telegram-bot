@@ -1,7 +1,7 @@
 from typing import final
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, MetaData, String
+from sqlalchemy import BigInteger, ForeignKey, MetaData, String
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -33,7 +33,7 @@ class User(Base):
     __tablename__ = "user"
 
     id_: Mapped[UUID] = mapped_column("id", primary_key=True)
-    user_id: Mapped[int]
+    user_id: Mapped[int] = mapped_column(BigInteger)
     is_authorizing: Mapped[bool]
     token_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("valid_token.id", ondelete="SET NULL")
