@@ -117,17 +117,25 @@ async def start(
     _ = await chat.send_message("You're already authorized")
 
 
-# TODO make a confirmation of a message send
-# Handler that pass the message to the senders
-async def send(
+async def confirm_send(
     update: telegram.Update,
     ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
+
+    if chat is None:
+        return
+
     user: telegram.User | None = update.effective_user
+
+    if user is None:
+        _ = await chat.send_message("An unknown error is occured")
+        return
+
     message: telegram.Message | None = update.effective_message
 
-    if chat is None or user is None or message is None:
+    if message is None:
+        _ = await chat.send_message("An unknown error is occured")
         return
 
     message_text: str | None = message.text
@@ -198,8 +206,143 @@ async def send(
 
         _ = await chat.send_message("You're authorized")
     else:
-        email_sender.send(message_text)
-        _ = await chat.send_message("Message have been sent")
+        reply_markup = telegram.InlineKeyboardMarkup(
+            [
+                [
+                    telegram.InlineKeyboardButton(
+                        "Yes",
+                        callback_data=(
+                            f"message_confirmation,true,{message_text}"
+                        ),
+                    ),
+                    telegram.InlineKeyboardButton(
+                        "No", callback_data="message_confirmation,false"
+                    ),
+                ]
+            ]
+        )
+        _ = await chat.send_message(
+            "Send a message?", reply_markup=reply_markup
+        )
+
+
+# TODO make a confirmation of a message send
+# Handler that pass the message to the senders
+async def send(
+    update: telegram.Update,
+    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+) -> None:
+    chat: telegram.Chat | None = update.effective_chat
+
+    if chat is None:
+        return
+
+    user: telegram.User | None = update.effective_user
+
+    if user is None:
+        _ = await chat.send_message("An unknown error is occured")
+        return
+
+    message: telegram.Message | None = update.effective_message
+
+    if message is None:
+        _ = await chat.send_message("An unknown error is occured")
+        return
+
+    with compiled_session() as session:
+        db_user: libs.User | None = libs.DBUserManipulator(
+            session, user_id=user.id
+        ).get()
+
+    if not isinstance(db_user, libs.User):
+        _ = await chat.send_message(
+            (
+                "You're not authorized. Please, type a /start command to "
+                "initiate an authorization"
+            )
+        )
+        return
+
+    with compiled_session() as session:
+        session.add(db_user)
+        is_user_authorizing: bool = libs.DBUserManipulator(
+            session, db_user=db_user
+        ).get_authorizing_status()
+
+    if is_user_authorizing:
+        _ = await chat.send_message("Send a token to authorize")
+
+    callback_query: telegram.CallbackQuery | None = update.callback_query
+
+    if callback_query is None:
+        _ = await chat.send_message("An unknown error is occured")
+        return
+
+    callback_query_data: str | None = callback_query.data
+
+    if callback_query_data is None:
+        _ = await chat.send_message("An unknown error is occured")
+        return
+
+    # Callback data of this handler always has the text on the index 2
+    # after the split
+    message_text: str = callback_query_data.split(",")[2]
+
+    email_sender.send(message_text)
+    _ = await chat.send_message("Message have been sent")
+
+
+async def cancel(
+    update: telegram.Update,
+    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+) -> None:
+    chat: telegram.Chat | None = update.effective_chat
+
+    if chat is None:
+        return
+
+    user: telegram.User | None = update.effective_user
+
+    if user is None:
+        _ = await chat.send_message("An unknown error is occured")
+        return
+
+    with compiled_session() as session:
+        db_user: libs.User | None = libs.DBUserManipulator(
+            session, user_id=user.id
+        ).get()
+
+    if isinstance(db_user, libs.User):
+        with compiled_session() as session:
+            session.add(db_user)
+            is_user_authorizing: bool = libs.DBUserManipulator(
+                session, db_user=db_user
+            ).get_authorizing_status()
+
+        if is_user_authorizing:
+            with compiled_session() as session:
+                session.add(db_user)
+                session.delete(db_user)
+                session.commit()
+
+            _ = await chat.send_message("An authorizing have been canceled")
+
+            return
+
+    callback_query: telegram.CallbackQuery | None = update.callback_query
+
+    if callback_query is not None:
+        data: str | None = callback_query.data
+
+        if data is None:
+            _ = await chat.send_message("An unknown error is occured")
+            return
+
+        _ = await chat.send_message("The message send have been canceled")
+        _ = await callback_query.answer()
+        return
+
+    _ = await chat.send_message("Nothing to cancel")
 
 
 async def notify_about_unknown_command(
@@ -211,7 +354,7 @@ async def notify_about_unknown_command(
     if chat is None:
         return
 
-    _ = await chat.send_message("Unknown command")
+    _ = await chat.send_message("An unknown command")
 
 
 async def show_admin_panel(
@@ -321,18 +464,28 @@ app = (
 # TODO make a `cancel` command
 start_command_handler = CommandHandler("start", start)
 admin_command_handler = CommandHandler("admin", show_admin_panel)
-callback_data_handler = CallbackQueryHandler(
-    generate_token, re.compile("generate_token")
-)
+cancel_command_handler = CommandHandler("cancel", cancel)
 unknown_command_handler = MessageHandler(
     filters.COMMAND, notify_about_unknown_command
 )
-message_handler = MessageHandler(filters.TEXT, send)
+token_generation_request_handler = CallbackQueryHandler(
+    generate_token, re.compile(r"^generate_token$")
+)
+message_send_handler = CallbackQueryHandler(
+    send, re.compile(r"^message_confirmation,true")
+)
+message_cancel_handler = CallbackQueryHandler(
+    cancel, re.compile(r"^message_confirmation,false$")
+)
+message_handler = MessageHandler(filters.TEXT, confirm_send)
 
 app.add_handler(start_command_handler)
 app.add_handler(admin_command_handler)
-app.add_handler(callback_data_handler)
+app.add_handler(cancel_command_handler)
 app.add_handler(unknown_command_handler)
+app.add_handler(token_generation_request_handler)
+app.add_handler(message_send_handler)
+app.add_handler(message_cancel_handler)
 app.add_handler(message_handler)
 
 if __name__ == "__main__":
