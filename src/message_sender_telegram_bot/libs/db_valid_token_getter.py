@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import TYPE_CHECKING, override
 
 from sqlalchemy import select
@@ -8,10 +9,13 @@ from .database_tables import ValidToken
 from .db_item_getter import DBItemGetter
 
 if TYPE_CHECKING:
+    from logging import Logger
     from typing import Self
 
-    from sqlalchemy import Select
+    from sqlalchemy import Result, Select
     from sqlalchemy.orm import Session
+
+logger: Logger = getLogger(__name__)
 
 
 class DBValidTokenGetter(DBItemGetter):
@@ -31,8 +35,16 @@ class DBValidTokenGetter(DBItemGetter):
         :param token: A token.
         :type token: str
         """
+        logger.debug("Initializing `%s`...", self.__class__.__name__)
+
+        logger.debug(
+            "Setting the arguments to the corresponding instance attributes..."
+        )
         self.__db_session: Session = db_session
         self.__token: str = token
+        logger.debug("Set")
+
+        logger.debug("Initialized")
 
     @override
     def get(self: Self) -> ValidToken | None:
@@ -43,11 +55,22 @@ class DBValidTokenGetter(DBItemGetter):
                  found.
         :rtype: ValidToken | None
         """
+        logger.debug("Starting a getting of the DB valid token...")
+
+        logger.debug("Constructing a statement...")
         select_token_stmt: Select[tuple[ValidToken]] = select(
             ValidToken
         ).where(ValidToken.token == self.__token)
-        valid_token: ValidToken | None = self.__db_session.execute(
+        logger.debug("Constructed")
+
+        logger.debug("Executing the statement...")
+        result: Result[tuple[ValidToken]] = self.__db_session.execute(
             select_token_stmt
-        ).scalar_one_or_none()
+        )
+        logger.debug("Executed")
+
+        logger.debug("Getting the DB valid token...")
+        valid_token: ValidToken | None = result.scalar_one_or_none()
+        logger.debug("Got")
 
         return valid_token

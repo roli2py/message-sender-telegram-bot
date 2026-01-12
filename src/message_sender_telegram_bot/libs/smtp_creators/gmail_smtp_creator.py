@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from logging import getLogger
 from smtplib import SMTP_SSL
 from typing import TYPE_CHECKING, override
 
 from .smtp_creator import SMTPCreator
 
 if TYPE_CHECKING:
+    from logging import Logger
     from smtplib import SMTP
     from typing import Self
+
+logger: Logger = getLogger(__name__)
 
 
 class GmailSMTPCreator(SMTPCreator):
@@ -18,6 +22,7 @@ class GmailSMTPCreator(SMTPCreator):
     :type SMTPCreator: class
     """
 
+    # TODO move to the constants
     __host: str = "smtp.gmail.com"
     __port: int = 465
 
@@ -31,8 +36,16 @@ class GmailSMTPCreator(SMTPCreator):
                          for gmail.
         :type password: str
         """
+        logger.debug("Initializing `%s`...", self.__class__.__name__)
+
+        logger.debug(
+            "Setting the arguments to the corresponding instance attributes..."
+        )
         self.__login: str = login
         self.__password: str = password
+        logger.debug("Set")
+
+        logger.debug("Initialized")
 
     @override
     def create(self: Self) -> SMTP:
@@ -42,8 +55,14 @@ class GmailSMTPCreator(SMTPCreator):
         :return: A SMTP instance connected to gmail.
         :rtype: SMTP
         """
-        smtp: SMTP_SSL = SMTP_SSL(host=self.__host, port=self.__port)
+        logger.debug("Starting a creation of a SMTP instance...")
 
+        logger.debug("Creating a SMTP instance...")
+        smtp: SMTP_SSL = SMTP_SSL(host=self.__host, port=self.__port)
+        logger.debug("Created")
+
+        logger.debug("Logging in to the gmail SMTP server...")
         _ = smtp.login(self.__login, self.__password)
+        logger.debug("Logged in")
 
         return smtp

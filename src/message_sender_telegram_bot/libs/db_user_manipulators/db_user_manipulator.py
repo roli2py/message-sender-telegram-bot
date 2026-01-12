@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from logging import getLogger
 from typing import TYPE_CHECKING, overload, override
 from uuid import uuid4
 
@@ -9,10 +10,13 @@ from ..database_tables import User, ValidToken
 from .abstract_db_user_manipulator import AbstractDBUserManipulator
 
 if TYPE_CHECKING:
+    from logging import Logger
     from typing import Self
 
-    from sqlalchemy import Select
+    from sqlalchemy import Result, Select
     from sqlalchemy.orm import Session
+
+logger: Logger = getLogger(__name__)
 
 
 class DBUserManipulator(AbstractDBUserManipulator):
@@ -65,13 +69,50 @@ class DBUserManipulator(AbstractDBUserManipulator):
         # directly provides a DB user; so the constructor checks the
         # cases when a client doesn't supply a user ID or DB user, or
         # supplies them both
+        logger.debug("Initializing `%s`...", self.__class__.__name__)
+
+        logger.debug(
+            (
+                "Checking an absent or a presence of the `user_id` and "
+                "`db_user` arguments..."
+            )
+        )
         if user_id is None and db_user is None:
+            logger.critical(
+                (
+                    f"The `user_id` and `db_user` arguments is absent. "
+                    f"Raising a `ValueError` exception..."
+                ),
+                exc_info=True,
+            )
             raise ValueError("A user ID or a DB user must be provided")
         elif user_id is not None and db_user is not None:
+            logger.critical(
+                (
+                    f"The `user_id` and `db_user` arguments is present. "
+                    f"Raising a `ValueError` exception..."
+                ),
+                exc_info=True,
+            )
             raise ValueError("Only a user ID or a DB user must be provided")
+        logger.debug(
+            (
+                f"Only a `user_id` or `db_user` argument is provided. "
+                f"Continuing an initializing..."
+            )
+        )
+
+        logger.debug(
+            (
+                "Assigning the arguments to the corresponding instance "
+                "attributes..."
+            )
+        )
         self.__db_session: Session = db_session
         self.__user_id: int | None = user_id
         self.__db_user: User | None = db_user
+        logger.debug("Assigned")
+        logger.debug("Initialized")
 
     @override
     def get(self: Self) -> User | None:
@@ -82,19 +123,38 @@ class DBUserManipulator(AbstractDBUserManipulator):
         :return: A DB user or None, if the DB user is not found.
         :rtype: User | None
         """
+        logger.debug("Starting a getting of a DB user...")
         user_id: int | None = self.__user_id
 
+        logger.debug("Checking for a presence of a user ID...")
         if user_id is None:
+            logger.critical(
+                "A user ID is absent. Raising a `ValueError` exception..."
+            )
             raise ValueError("A user ID is absent")
+        logger.debug(
+            "A user ID is present. Continuing the getting of the DB user..."
+        )
 
+        logger.debug("Constructing a DB statement...")
         select_user_stmt: Select[tuple[User]] = select(User).where(
             User.user_id == self.__user_id
         )
-        db_user: User | None = self.__db_session.execute(
+        logger.debug("Constructed")
+        logger.debug("Executing the statement...")
+        result: Result[tuple[User]] = self.__db_session.execute(
             select_user_stmt
-        ).scalar_one_or_none()
+        )
+        logger.debug("Executed")
+        logger.debug("Getting the DB user....")
+        db_user: User | None = result.scalar_one_or_none()
+        logger.debug("Got")
 
+        logger.debug(
+            "Assigning the DB user to the `__db_user` instance attribute..."
+        )
         self.__db_user = db_user
+        logger.debug("Assigned")
 
         return db_user
 
@@ -107,11 +167,20 @@ class DBUserManipulator(AbstractDBUserManipulator):
         :return: A new DB user.
         :rtype: User
         """
+        logger.debug("Starting a creation of a new DB user...")
         user_id: int | None = self.__user_id
 
+        logger.debug("Checking for a presence of a user ID...")
         if user_id is None:
+            logger.critical(
+                "A user ID is absent. Raising a `ValueError` exception..."
+            )
             raise ValueError("A user ID is absent")
+        logger.debug(
+            "A user ID is present. Continuing the creation of the DB user..."
+        )
 
+        logger.debug("Creating a DB user...")
         new_db_user: User = User(
             id_=uuid4(),
             user_id=user_id,
@@ -119,6 +188,7 @@ class DBUserManipulator(AbstractDBUserManipulator):
             token_id=None,
             valid_token=None,
         )
+        logger.debug("Created")
 
         return new_db_user
 
@@ -131,13 +201,25 @@ class DBUserManipulator(AbstractDBUserManipulator):
         :return: A DB user's authorizing status.
         :rtype: bool
         """
+        logger.debug("Starting a getting of an authorizing status...")
         db_user: User | None = self.__db_user
 
+        logger.debug("Checking for a presence of a DB user...")
         if db_user is None:
+            logger.critical(
+                "A DB user is absent. Raising a `ValueError` exception..."
+            )
             raise ValueError("A DB user is absent")
+        logger.debug(
+            (
+                "A DB user is present. Continuing the getting of the "
+                "authorizing status..."
+            )
+        )
 
+        logger.debug("Getting an authorizing status...")
         is_user_authorizing: bool = db_user.is_authorizing
-        print(is_user_authorizing)
+        logger.debug("Got")
 
         return is_user_authorizing
 
@@ -151,12 +233,25 @@ class DBUserManipulator(AbstractDBUserManipulator):
                  valid token is absent.
         :rtype: str | None
         """
+        logger.debug("Starting a getting of a DB valid token...")
         db_user: User | None = self.__db_user
 
+        logger.debug("Checking for a presence of a DB user...")
         if db_user is None:
+            logger.critical(
+                "A DB user is absent. Raising a `ValueError` exception..."
+            )
             raise ValueError("A DB user is absent")
+        logger.debug(
+            (
+                "A DB user is present. Continuing the getting of the DB valid "
+                "token..."
+            )
+        )
 
+        logger.debug("Getting a DB valid token...")
         valid_token: ValidToken | None = db_user.valid_token
+        logger.debug("Got")
 
         return valid_token
 
@@ -170,12 +265,25 @@ class DBUserManipulator(AbstractDBUserManipulator):
         :param is_authorizing: An authorizing status to set.
         :type is_authorizing: bool
         """
+        logger.debug("Starting a setting of an authorizing status...")
         db_user: User | None = self.__db_user
 
+        logger.debug("Checking for a presence of a DB user...")
         if db_user is None:
+            logger.critical(
+                "A DB user is absent. Raising a `ValueError` exception..."
+            )
             raise ValueError("A DB user is absent")
+        logger.debug(
+            (
+                "A DB user is present. Continuing the setting of the "
+                "authorizing status..."
+            )
+        )
 
+        logger.debug("Setting an authorizing status...")
         db_user.is_authorizing = is_authorizing
+        logger.debug("Set")
 
     @override
     def set_valid_token(self: Self, valid_token: ValidToken) -> None:
@@ -187,12 +295,25 @@ class DBUserManipulator(AbstractDBUserManipulator):
         :param token: A DB valid token to set.
         :type token: str
         """
+        logger.debug("Starting a setting of a DB valid token...")
         db_user: User | None = self.__db_user
 
+        logger.debug("Checking for a presence of a DB user...")
         if db_user is None:
+            logger.critical(
+                "A DB user is absent. Raising a `ValueError` exception..."
+            )
             raise ValueError("A DB user is absent")
+        logger.debug(
+            (
+                "A DB user is present. Continuing the setting of the DB valid "
+                "token..."
+            )
+        )
 
+        logger.debug("Setting a DB valid token...")
         db_user.valid_token = valid_token
+        logger.debug("Set")
 
     @override
     def clear_valid_token(self: Self) -> None:
@@ -201,9 +322,22 @@ class DBUserManipulator(AbstractDBUserManipulator):
         column to `None`. This means, that the user loses the claim to
         the token.
         """
+        logger.debug("Starting a clearing of the DB valid token...")
         db_user: User | None = self.__db_user
 
+        logger.debug("Checking for a presence of a DB user...")
         if db_user is None:
+            logger.critical(
+                "A DB user is absent. Raising a `ValueError` exception..."
+            )
             raise ValueError("A DB user is absent")
+        logger.debug(
+            (
+                "A DB user is present. Continuing the clearing of the DB "
+                "valid token..."
+            )
+        )
 
+        logger.debug("Clearing the DB valid token...")
         db_user.valid_token = None
+        logger.debug("Cleared")

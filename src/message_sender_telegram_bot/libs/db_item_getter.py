@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
+from logging import getLogger
 from typing import TYPE_CHECKING
 
 from .database_tables import Base
 
 if TYPE_CHECKING:
+    from logging import Logger
     from typing import Self
+
+logger: Logger = getLogger(__name__)
 
 
 class DBItemGetter(metaclass=ABCMeta):
@@ -21,6 +25,15 @@ class DBItemGetter(metaclass=ABCMeta):
         :rtype: Base | None
         :raises NotImplementedError: Must be implemented.
         """
+        logger.critical(
+            (
+                f"A `%s` method of the `%s` interface is invoked. Raising a "
+                f"`NotImplementedError` exception..."
+            ),
+            __name__,
+            self.__class__.__name__,
+            exc_info=True,
+        )
         raise NotImplementedError(
             (
                 f"A `{__name__}` method of the `{self.__class__.__name__}` "
