@@ -1,5 +1,8 @@
-.PHONY: all format test
-all: format test
+.PHONY: all typecheck format test
+all: typecheck format test
+
+typecheck:
+	basedpyright
 
 format:
 	isort .

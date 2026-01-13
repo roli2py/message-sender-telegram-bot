@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from logging import getLogger
 from smtplib import SMTP
+from textwrap import dedent
 from typing import TYPE_CHECKING, Self, override
 
 from .sender import Sender
@@ -21,7 +22,14 @@ class EmailSender(Sender):
     :type Sender: class
     """
 
-    def __init__(self: Self, smtp: SMTP, from_addr: str, to_addr: str) -> None:
+    def __init__(
+        self: Self,
+        smtp: SMTP,
+        from_addr: str,
+        to_addr: str,
+        *,
+        sender_name: str | None = None,
+    ) -> None:
         """
         Creates an email sender.
 
@@ -31,8 +39,26 @@ class EmailSender(Sender):
         :type from_addr: str
         :param to_addr: A "To:" email address.
         :type to_addr: str
+        :param sender_name: A sender name, defaults to None.
+        :type sender_name: str | None, optional
         """
         logger.debug("Initializing `%s`...", self.__class__.__name__)
+
+        logger.debug("Checking a presence of a sender name...")
+        if sender_name is not None:
+            logger.debug(
+                'The sender name is provided. Choosing the "%s" name',
+                sender_name,
+            )
+            chosen_sender_name: str = sender_name
+        else:
+            logger.debug(
+                (
+                    "The sender name is not provided. Choosing the "
+                    '"Anonymous" name'
+                )
+            )
+            chosen_sender_name = "Anonymous"
 
         logger.debug(
             "Setting the arguments to the corresponding instance attributes..."
@@ -40,9 +66,28 @@ class EmailSender(Sender):
         self.__smtp: SMTP = smtp
         self.__from_addr: str = from_addr
         self.__to_addr: str = to_addr
+        self.__sender_name: str = chosen_sender_name
         logger.debug("Set")
 
         logger.debug("Initialized")
+
+    def get_sender_name(self: Self) -> str:
+        """
+        Gets a sender name.
+
+        :return: A sender name.
+        :rtype: str
+        """
+        return self.__sender_name
+
+    def set_sender_name(self: Self, sender_name: str) -> None:
+        """
+        Sets a sender name.
+
+        :param sender_name: A sender name to set.
+        :type sender_name: str
+        """
+        self.__sender_name = sender_name
 
     @override
     def send(self: Self, data: str) -> None:
@@ -54,10 +99,27 @@ class EmailSender(Sender):
         """
         logger.debug("Starting a sending of the data by an email...")
 
+        logger.debug("Constructing a message...")
+        message: bytes = (
+            dedent(
+                """
+                Subject: A message from Telegram
+
+                {data}
+
+                — {sender_name}
+                """
+            )
+            .strip()
+            .format(data=data, sender_name=self.__sender_name)
+            .encode()
+        )
+        logger.debug("Constructed")
+
         logger.debug("Sending the data by an email...")
         _ = self.__smtp.sendmail(
             self.__from_addr,
             self.__to_addr,
-            data.encode(),
+            message,
         )
         logger.debug("Sent")

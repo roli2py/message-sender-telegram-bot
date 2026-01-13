@@ -1,8 +1,9 @@
 from logging import getLogger
 from typing import TYPE_CHECKING, override
 
-from libs import AbstractDBUserManipulator
-
+from ..db_user_manipulators.abstract_db_user_manipulator import (
+    AbstractDBUserManipulator,
+)
 from .ownership_prover import OwnershipProver
 
 if TYPE_CHECKING:

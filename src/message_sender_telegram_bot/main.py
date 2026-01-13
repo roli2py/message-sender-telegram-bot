@@ -46,9 +46,9 @@ database_engine: Engine = create_engine(
 )
 compiled_session: sessionmaker[Session] = sessionmaker(database_engine)
 
-# Creating a SMTP connection and passing to an email sender
 smtp: SMTP = libs.GmailSMTPCreator(
-    GMAIL_SMTP_LOGIN, GMAIL_SMTP_PASSWORD
+    GMAIL_SMTP_LOGIN,
+    GMAIL_SMTP_PASSWORD,
 ).create()
 email_sender: libs.EmailSender = libs.EmailSender(
     smtp,
@@ -57,26 +57,35 @@ email_sender: libs.EmailSender = libs.EmailSender(
 )
 
 
-# Handler that authorize a user
+# Handler that starts an authorization process
 async def start(
     update: telegram.Update,
     ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
+
+    if chat is None:
+        return
+
     user: telegram.User | None = update.effective_user
 
-    if chat is None or user is None:
+    if user is None:
+        _ = await chat.send_message("An unknown error is occured")
         return
 
     with compiled_session() as session:
         db_user: libs.User | None = libs.DBUserManipulator(
-            session, user_id=user.id
+            session,
+            user_id=user.id,
         ).get()
 
+    # If a DB user is not exist, starting an authorization process
     if not isinstance(db_user, libs.User):
         with compiled_session() as session:
+            # A creating of a DB user starts an authorization process
             new_db_user: libs.User = libs.DBUserManipulator(
-                session, user_id=user.id
+                session,
+                user_id=user.id,
             ).create()
             session.add(new_db_user)
             session.commit()
@@ -88,7 +97,8 @@ async def start(
     with compiled_session() as session:
         session.add(db_user)
         is_user_authorizing: bool = libs.DBUserManipulator(
-            session, db_user=db_user
+            session,
+            db_user=db_user,
         ).get_authorizing_status()
 
     if is_user_authorizing:
@@ -98,14 +108,18 @@ async def start(
     with compiled_session() as session:
         session.add(db_user)
         valid_token: libs.ValidToken | None = libs.DBUserManipulator(
-            session, db_user=db_user
+            session,
+            db_user=db_user,
         ).get_valid_token()
 
+    # If a DB user is authorized and a DB valid token is not exist, then
+    # the token is expired and the user must enter a new token
     if not isinstance(valid_token, libs.ValidToken):
         with compiled_session() as session:
             session.add(db_user)
             libs.DBUserManipulator(
-                session, db_user=db_user
+                session,
+                db_user=db_user,
             ).set_authorizing_status(True)
             session.commit()
 
@@ -114,6 +128,7 @@ async def start(
         )
         return
 
+    # If other cases is not invoked, then the user is authorized
     _ = await chat.send_message("You're already authorized")
 
 
@@ -141,13 +156,18 @@ async def confirm_send(
     message_text: str | None = message.text
 
     if message_text is None:
+        _ = await chat.send_message(
+            "Your message doesn't have a text. Send a message with a text"
+        )
         return
 
     with compiled_session() as session:
         db_user: libs.User | None = libs.DBUserManipulator(
-            session, user_id=user.id
+            session,
+            user_id=user.id,
         ).get()
 
+    # If a DB user is not exists, then he's not authozired
     if not isinstance(db_user, libs.User):
         _ = await chat.send_message(
             (
@@ -160,12 +180,17 @@ async def confirm_send(
     with compiled_session() as session:
         session.add(db_user)
         is_user_authorizing: bool = libs.DBUserManipulator(
-            session, db_user=db_user
+            session,
+            db_user=db_user,
         ).get_authorizing_status()
 
     if is_user_authorizing:
+        # Assuming, that a user invoked a `start` command and this
+        # message contains an authorization token
         try:
             hex_token: libs.HexToken = libs.HexToken(message_text)
+        # When a hex token is wrong, the constructor will throw a
+        # `ValueError` exception
         except ValueError:
             _ = await chat.send_message(
                 (
@@ -178,16 +203,13 @@ async def confirm_send(
         with compiled_session() as session:
             session.add(db_user)
             valid_token: libs.ValidToken | None = libs.DBValidTokenManipulator(
-                session, hex_token.get()
+                session,
+                hex_token.get(),
             ).get()
 
+        # If a DB valid token with a user-provided token is not exist,
+        # then the token is expired or invalid
         if not isinstance(valid_token, libs.ValidToken):
-            _ = await chat.send_message(
-                "The token is not valid. Please, provide an another token"
-            )
-            return
-
-        if hex_token.get() != valid_token.token:
             _ = await chat.send_message(
                 "The token is not valid. Please, provide an another token"
             )
@@ -206,27 +228,27 @@ async def confirm_send(
 
         _ = await chat.send_message("You're authorized")
     else:
-        reply_markup = telegram.InlineKeyboardMarkup(
-            [
-                [
-                    telegram.InlineKeyboardButton(
-                        "Yes",
-                        callback_data=(
-                            f"message_confirmation,true,{message_text}"
-                        ),
-                    ),
-                    telegram.InlineKeyboardButton(
-                        "No", callback_data="message_confirmation,false"
-                    ),
-                ]
-            ]
+        yes_button: telegram.InlineKeyboardButton = (
+            telegram.InlineKeyboardButton(
+                "Yes",
+                callback_data=f"message_confirmation,true,{message_text}",
+            )
+        )
+        no_button: telegram.InlineKeyboardButton = (
+            telegram.InlineKeyboardButton(
+                "No",
+                callback_data="message_confirmation,false",
+            )
+        )
+        reply_markup: telegram.InlineKeyboardMarkup = (
+            telegram.InlineKeyboardMarkup([[yes_button, no_button]])
         )
         _ = await chat.send_message(
-            "Send a message?", reply_markup=reply_markup
+            "Send a message?",
+            reply_markup=reply_markup,
         )
 
 
-# TODO make a confirmation of a message send
 # Handler that pass the message to the senders
 async def send(
     update: telegram.Update,
@@ -254,6 +276,7 @@ async def send(
             session, user_id=user.id
         ).get()
 
+    # If a DB user is not exists, then he's not authozired
     if not isinstance(db_user, libs.User):
         _ = await chat.send_message(
             (
@@ -288,8 +311,10 @@ async def send(
     # after the split
     message_text: str = callback_query_data.split(",")[2]
 
+    email_sender.set_sender_name(user.name)
     email_sender.send(message_text)
     _ = await chat.send_message("Message have been sent")
+    _ = await callback_query.answer()
 
 
 async def cancel(
@@ -461,7 +486,6 @@ app = (
     .build()
 )
 
-# TODO make a `cancel` command
 start_command_handler = CommandHandler("start", start)
 admin_command_handler = CommandHandler("admin", show_admin_panel)
 cancel_command_handler = CommandHandler("cancel", cancel)

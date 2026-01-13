@@ -7,7 +7,11 @@ class EmailSender {
     - smtp: SMTP
     - from_addr: String
     - to_addr: String
-    + EmailSender(smpt: SMTP)
+    - sender_name: String
+    + EmailSender(smpt: SMTP, from_addr: String, to_addr: String, sender_name: String [0..1])
+    + get_sender_name(): String
+    + set_sender_name(sender_name: String): None
+    + send(data: String): None
 }
 class SMTP
 interface SMTPCreator {

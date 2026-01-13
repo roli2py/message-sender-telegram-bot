@@ -1,6 +1,3 @@
-# Due to how the pyright works, turning off the report of the
-# non-existing report import cycles
-# pyright: reportImportCycles=none
 from __future__ import annotations
 
 from .authorizations import Authorization, TokenAuthorization
