@@ -88,6 +88,7 @@ make test
 
 Available targets:
 1. `all` — Invokes all targets. Invoked by default, if `make` is started without the target.
+2. `typecheck` — Type checks the project by `basedpyright`.
 2. `format` — Formats the project by `isort` and `black`.
 3. `test` — Starts the unittests by `pytest`.
 

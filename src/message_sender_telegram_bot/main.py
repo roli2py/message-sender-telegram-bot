@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta
 from os import environ
 from smtplib import SMTP
 from typing import TYPE_CHECKING
@@ -132,9 +133,103 @@ async def start(
     _ = await chat.send_message("You're already authorized")
 
 
-async def confirm_send(
+async def authorize(
+    chat: telegram.Chat,
+    message_text: str,
+    db_user: libs.User,
+) -> None:
+    # Assuming, that a user invoked a `start` command and this
+    # message contains an authorization token
+    try:
+        hex_token: libs.HexToken = libs.HexToken(message_text)
+    # When a hex token is wrong, the constructor will throw a
+    # `ValueError` exception
+    except ValueError:
+        _ = await chat.send_message(
+            (
+                "The token contains not-compitable symbols. Please, check "
+                "your token and try again"
+            )
+        )
+        return
+
+    with compiled_session() as session:
+        session.add(db_user)
+        valid_token: libs.ValidToken | None = libs.DBValidTokenManipulator(
+            session,
+            hex_token.get(),
+        ).get()
+
+    # If a DB valid token with a user-provided token is not exist,
+    # then the token is expired or invalid
+    if not isinstance(valid_token, libs.ValidToken):
+        _ = await chat.send_message(
+            "The token is not valid. Please, provide an another token"
+        )
+        return
+
+    # On this step, the user is pass the challenges, so the user is
+    # authorized
+    with compiled_session() as session:
+        session.add(db_user)
+        db_user_manipulator: libs.DBUserManipulator = libs.DBUserManipulator(
+            session, db_user=db_user
+        )
+        db_user_manipulator.set_valid_token(valid_token)
+        db_user_manipulator.set_authorizing_status(False)
+        session.commit()
+
+    _ = await chat.send_message("You're authorized")
+    pass
+
+
+async def show_message_confirmation_panel(chat: telegram.Chat) -> None:
+    yes_button: telegram.InlineKeyboardButton = telegram.InlineKeyboardButton(
+        "Yes",
+        callback_data="message_confirmation,true",
+    )
+
+    no_button: telegram.InlineKeyboardButton = telegram.InlineKeyboardButton(
+        "No",
+        callback_data="message_confirmation,false",
+    )
+
+    reply_markup: telegram.InlineKeyboardMarkup = (
+        telegram.InlineKeyboardMarkup([[yes_button, no_button]])
+    )
+    _ = await chat.send_message(
+        "Send a message?",
+        reply_markup=reply_markup,
+    )
+
+
+async def check_cooldown(db_user: libs.User) -> tuple[bool, timedelta]:
+    with compiled_session() as session:
+        session.add(db_user)
+        last_send_date: datetime | None = db_user.last_send_date
+
+    if last_send_date is None:
+        return (True, timedelta())
+
+    cooldown: timedelta = timedelta(seconds=30)
+
+    is_cooldown_pass: bool = libs.MessageSendCooldownChecker(
+        last_send_date,
+        cooldown=cooldown,
+    ).is_pass()
+
+    if is_cooldown_pass:
+        return (True, timedelta())
+
+    diff_between_dates: timedelta = datetime.now() - last_send_date
+    remaining_cooldown: timedelta = cooldown - diff_between_dates
+
+    return (False, remaining_cooldown)
+
+
+async def handle_message(
     update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    ctx: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
 
@@ -185,74 +280,36 @@ async def confirm_send(
         ).get_authorizing_status()
 
     if is_user_authorizing:
-        # Assuming, that a user invoked a `start` command and this
-        # message contains an authorization token
-        try:
-            hex_token: libs.HexToken = libs.HexToken(message_text)
-        # When a hex token is wrong, the constructor will throw a
-        # `ValueError` exception
-        except ValueError:
+        await authorize(chat, message_text, db_user)
+        return
+    else:
+        is_cooldown_pass, remaining_cooldown = await check_cooldown(db_user)
+
+        if not is_cooldown_pass:
             _ = await chat.send_message(
                 (
-                    "The token contains not-compitable symbols. Please, check "
-                    "your token and try again"
+                    f"Send the message again after "
+                    f"{remaining_cooldown.seconds} seconds"
                 )
             )
             return
 
-        with compiled_session() as session:
-            session.add(db_user)
-            valid_token: libs.ValidToken | None = libs.DBValidTokenManipulator(
-                session,
-                hex_token.get(),
-            ).get()
+        user_data = ctx.user_data
 
-        # If a DB valid token with a user-provided token is not exist,
-        # then the token is expired or invalid
-        if not isinstance(valid_token, libs.ValidToken):
-            _ = await chat.send_message(
-                "The token is not valid. Please, provide an another token"
-            )
+        if user_data is None:
+            _ = await chat.send_message("An unknown error is occured")
             return
 
-        # On this step, the user is pass the challenges, so the user is
-        # authorized
-        with compiled_session() as session:
-            session.add(db_user)
-            db_user_manipulator: libs.DBUserManipulator = (
-                libs.DBUserManipulator(session, db_user=db_user)
-            )
-            db_user_manipulator.set_valid_token(valid_token)
-            db_user_manipulator.set_authorizing_status(False)
-            session.commit()
+        user_data["message_text"] = message_text
+        await show_message_confirmation_panel(chat)
 
-        _ = await chat.send_message("You're authorized")
-    else:
-        yes_button: telegram.InlineKeyboardButton = (
-            telegram.InlineKeyboardButton(
-                "Yes",
-                callback_data=f"message_confirmation,true,{message_text}",
-            )
-        )
-        no_button: telegram.InlineKeyboardButton = (
-            telegram.InlineKeyboardButton(
-                "No",
-                callback_data="message_confirmation,false",
-            )
-        )
-        reply_markup: telegram.InlineKeyboardMarkup = (
-            telegram.InlineKeyboardMarkup([[yes_button, no_button]])
-        )
-        _ = await chat.send_message(
-            "Send a message?",
-            reply_markup=reply_markup,
-        )
+        return
 
 
 # Handler that pass the message to the senders
 async def send(
     update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    ctx: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
 
@@ -295,31 +352,58 @@ async def send(
     if is_user_authorizing:
         _ = await chat.send_message("Send a token to authorize")
 
+    is_cooldown_pass, remaining_cooldown = await check_cooldown(db_user)
+
+    if not is_cooldown_pass:
+        _ = await chat.send_message(
+            (
+                f"Send the message again after {remaining_cooldown.seconds} "
+                f"seconds"
+            )
+        )
+        return
+
     callback_query: telegram.CallbackQuery | None = update.callback_query
 
     if callback_query is None:
         _ = await chat.send_message("An unknown error is occured")
         return
 
-    callback_query_data: str | None = callback_query.data
+    callback_data: str | None = callback_query.data
 
-    if callback_query_data is None:
+    if callback_data is None:
         _ = await chat.send_message("An unknown error is occured")
         return
 
-    # Callback data of this handler always has the text on the index 2
-    # after the split
-    message_text: str = callback_query_data.split(",")[2]
+    user_data = ctx.user_data
+
+    if (
+        user_data is None
+        or "message_text" not in user_data
+        or not isinstance(user_data["message_text"], str)
+    ):
+        _ = await chat.send_message("An unknown error is occured")
+        return
+
+    message_text: str = user_data["message_text"]
 
     email_sender.set_sender_name(user.name)
     email_sender.send(message_text)
-    _ = await chat.send_message("Message have been sent")
+
+    del user_data["message_text"]
+
+    with compiled_session() as session:
+        session.add(db_user)
+        db_user.last_send_date = datetime.now()
+        session.commit()
+
+    _ = await message.edit_text("The message have been sent")
     _ = await callback_query.answer()
 
 
 async def cancel(
     update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    ctx: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
 
@@ -357,15 +441,31 @@ async def cancel(
     callback_query: telegram.CallbackQuery | None = update.callback_query
 
     if callback_query is not None:
-        data: str | None = callback_query.data
+        message: telegram.Message | None = update.effective_message
 
-        if data is None:
+        if message is None:
             _ = await chat.send_message("An unknown error is occured")
             return
 
-        _ = await chat.send_message("The message send have been canceled")
-        _ = await callback_query.answer()
-        return
+        callback_data: str | None = callback_query.data
+
+        if callback_data is None:
+            _ = await chat.send_message("An unknown error is occured")
+            return
+
+        user_data = ctx.user_data
+
+        if user_data is None:
+            _ = await chat.send_message("An unknown error is occued")
+            return
+
+        if "message_text" in user_data:
+            del user_data["message_text"]
+
+            _ = await message.edit_text("The message send have been canceled")
+            _ = await callback_query.answer()
+
+            return
 
     _ = await chat.send_message("Nothing to cancel")
 
@@ -382,6 +482,8 @@ async def notify_about_unknown_command(
     _ = await chat.send_message("An unknown command")
 
 
+# TODO realize a "Delete a token" button
+# TODO realize a "List tokens" button
 async def show_admin_panel(
     update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE
 ) -> None:
@@ -495,21 +597,21 @@ unknown_command_handler = MessageHandler(
 token_generation_request_handler = CallbackQueryHandler(
     generate_token, re.compile(r"^generate_token$")
 )
-message_send_handler = CallbackQueryHandler(
-    send, re.compile(r"^message_confirmation,true")
+send_message_handler = CallbackQueryHandler(
+    send, re.compile(r"^message_confirmation,true$")
 )
-message_cancel_handler = CallbackQueryHandler(
+cancel_message_handler = CallbackQueryHandler(
     cancel, re.compile(r"^message_confirmation,false$")
 )
-message_handler = MessageHandler(filters.TEXT, confirm_send)
+message_handler = MessageHandler(filters.TEXT, handle_message)
 
 app.add_handler(start_command_handler)
 app.add_handler(admin_command_handler)
 app.add_handler(cancel_command_handler)
 app.add_handler(unknown_command_handler)
 app.add_handler(token_generation_request_handler)
-app.add_handler(message_send_handler)
-app.add_handler(message_cancel_handler)
+app.add_handler(send_message_handler)
+app.add_handler(cancel_message_handler)
 app.add_handler(message_handler)
 
 if __name__ == "__main__":

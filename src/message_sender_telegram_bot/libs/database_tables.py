@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import final
 from uuid import UUID
 
@@ -42,6 +43,7 @@ class User(Base):
         back_populates="user"
     )
     is_owner: Mapped[bool]
+    last_send_date: Mapped[datetime | None]
 
 
 @final

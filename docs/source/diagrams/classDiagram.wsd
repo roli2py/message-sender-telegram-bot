@@ -104,9 +104,21 @@ interface OwnershipProver {
     + prove(): Boolean
 }
 class UserOwnershipProver {
-    - db_user: User
+    - db_user_manipulator: AbstractDBUserManipulator
     + UserOwnershipProver(db_user_manipulator: AbstractDBUserManipulator)
     + prove(): Boolean
+}
+class datetime
+class timedelta
+interface CooldownChecker {
+    + is_pass(): Boolean
+}
+class MessageSendCooldownChecker {
+    - last_send_date: datetime
+    - cooldown: timedelta [0..1]
+    - pass_date: datetime [0..1]
+    + MessageSendCooldownChecker(last_send_date: datetime, cooldown: timedelta = None, pass_date: datetime = None)
+    + is_pass(): Boolean
 }
 
 note left of None
@@ -155,6 +167,23 @@ note right of DBUserManipulator::DBUserManipulator
     either a user ID or a DB
     user
 endnote
+note right of datetime
+    A `datetime` library's
+    class that represents a
+    date with time
+endnote
+note left of timedelta
+    A `datetime` library's
+    class that represents a
+    difference between two
+    `datetime` objects
+endnote
+note right of MessageSendCooldownChecker::MessageSendCooldownChecker
+    A client can choose to
+    provide a cooldown or a
+    specific date when a user
+    will get an access
+endnote
 
 None <-- Sender
 Sender <|.. EmailSender
@@ -182,4 +211,7 @@ Session <-- DBUserManipulator
 DBItemGetter <|.. DBValidTokenManipulator
 DBItemCreator <|.. DBValidTokenManipulator
 OwnershipProver <|.. UserOwnershipProver
+CooldownChecker <|.. MessageSendCooldownChecker
+datetime <-- MessageSendCooldownChecker
+timedelta <-- MessageSendCooldownChecker
 @enduml
