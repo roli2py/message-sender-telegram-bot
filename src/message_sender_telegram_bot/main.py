@@ -47,15 +47,19 @@ database_engine: Engine = create_engine(
 )
 compiled_session: sessionmaker[Session] = sessionmaker(database_engine)
 
-smtp: SMTP = libs.GmailSMTPCreator(
-    GMAIL_SMTP_LOGIN,
-    GMAIL_SMTP_PASSWORD,
-).create()
-email_sender: libs.EmailSender = libs.EmailSender(
-    smtp,
-    EMAIL_FROM_ADDR,
-    EMAIL_TO_ADDR,
-)
+
+def send_email(name: str, text: str) -> None:
+    smtp: SMTP = libs.GmailSMTPCreator(
+        GMAIL_SMTP_LOGIN,
+        GMAIL_SMTP_PASSWORD,
+    ).create()
+    email_sender: libs.EmailSender = libs.EmailSender(
+        smtp,
+        EMAIL_FROM_ADDR,
+        EMAIL_TO_ADDR,
+        sender_name=name,
+    )
+    email_sender.send(text)
 
 
 # Handler that starts an authorization process
@@ -387,8 +391,7 @@ async def send(
 
     message_text: str = user_data["message_text"]
 
-    email_sender.set_sender_name(user.name)
-    email_sender.send(message_text)
+    send_email(user.name, message_text)
 
     del user_data["message_text"]
 
