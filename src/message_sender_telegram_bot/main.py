@@ -4,9 +4,15 @@ import re
 from datetime import datetime, timedelta
 from os import environ
 from smtplib import SMTP
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ReadOnly, TypedDict, cast
 
+import msgpack  # pyright: ignore[reportMissingTypeStubs]  # type: ignore
 import telegram
+from kafka import (  # pyright: ignore[reportMissingTypeStubs]  # type: ignore
+    KafkaConsumer,
+    KafkaProducer,
+    TopicPartition,
+)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from telegram.constants import ChatType, ParseMode
@@ -27,6 +33,18 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine
     from sqlalchemy.orm import Session
 
+
+# Using an alternative form to include an `id` key
+EmailMessage = TypedDict(
+    "EmailMessage",
+    {
+        "id": ReadOnly[int],
+        "sender": ReadOnly[str],
+        "message": ReadOnly[str],
+    },
+)
+
+
 # Data from the environment variables
 TELEGRAM_TOKEN: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_TELEGRAM_TOKEN"]
 DB_USER: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_DB_USER"]
@@ -46,6 +64,45 @@ database_engine: Engine = create_engine(
     pool_pre_ping=True,
 )
 compiled_session: sessionmaker[Session] = sessionmaker(database_engine)
+
+message_producer: KafkaProducer = KafkaProducer(
+    bootstrap_servers="localhost:9092",
+    value_serializer=msgpack.packb,  # pyright: ignore[reportUnknownMemberType]  # type: ignore
+)
+email_consumer: KafkaConsumer = KafkaConsumer(
+    group_id="message",
+    bootstrap_servers="localhost:9092",
+    value_deserializer=msgpack.unpackb,  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]  # type: ignore
+    consumer_timeout_ms=5000,
+)
+
+# Creating a partition to seek an offset further
+email_topic_partition: TopicPartition = TopicPartition("email", 0)
+email_consumer.assign(  # pyright: ignore[reportUnknownMemberType]  # type: ignore
+    [email_topic_partition]
+)
+
+
+# If the bot is started for the first time, the consumer will ignore
+# first message. Seeking to the beginning fixes this bug
+def seek_offset_if_offset_zero(
+    consumer: KafkaConsumer, partition: TopicPartition
+) -> None:
+    end_offsets = consumer.end_offsets(  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]  # type: ignore
+        [partition]
+    )
+    end_offset = end_offsets[  # pyright: ignore[reportUnknownVariableType]  # type: ignore
+        partition
+    ]
+
+    if not isinstance(end_offset, int):
+        raise ValueError("An end offset of a consumer group must be `int`")
+
+    if end_offset == 1:
+        consumer.seek_to_beginning()  # pyright: ignore[reportUnknownMemberType]  # type: ignore
+
+
+seek_offset_if_offset_zero(email_consumer, email_topic_partition)
 
 
 def send_email(name: str, text: str) -> None:
@@ -370,13 +427,13 @@ async def send(
     callback_query: telegram.CallbackQuery | None = update.callback_query
 
     if callback_query is None:
-        _ = await chat.send_message("An unknown error is occured")
+        _ = await message.edit_text("An unknown error is occured")
         return
 
     callback_data: str | None = callback_query.data
 
     if callback_data is None:
-        _ = await chat.send_message("An unknown error is occured")
+        _ = await message.edit_text("An unknown error is occured")
         return
 
     user_data = ctx.user_data
@@ -386,12 +443,26 @@ async def send(
         or "message_text" not in user_data
         or not isinstance(user_data["message_text"], str)
     ):
-        _ = await chat.send_message("An unknown error is occured")
+        _ = await message.edit_text("An unknown error is occured")
         return
 
     message_text: str = user_data["message_text"]
 
-    send_email(user.name, message_text)
+    message_producer.send(  # pyright: ignore[reportUnknownMemberType]  # type: ignore
+        "email",
+        EmailMessage(id=user.id, sender=user.name, message=message_text),
+    )
+
+    for (  # pyright: ignore[reportUnknownVariableType]  # type: ignore
+        consumer_message
+    ) in email_consumer:
+        email: EmailMessage = cast(EmailMessage, consumer_message.value)
+
+        if email["id"] == user.id:
+            send_email(email["sender"], email["message"])
+            # The bot knows that the user's message is sent, so the bot
+            # can stop the message receiving
+            break
 
     del user_data["message_text"]
 
@@ -578,7 +649,24 @@ async def generate_token(
 
 
 async def post_init(_) -> None:
+    # If the bot is crashed, it'll need to send the unsent messages; so
+    # after the init, the bot starts to send the messages
+    # TODO check a correctness of the message
+    print("Sending the unsent message if they are...")
+    for (
+        message  # pyright: ignore[reportUnknownVariableType]  # type: ignore
+    ) in email_consumer:
+        email: EmailMessage = cast(EmailMessage, message.value)
+
+        send_email(email["sender"], email["message"])
+        # Timeout will end the message receiving
+
     print("Started")
+
+
+async def post_shutdown(_) -> None:
+    message_producer.close()  # pyright: ignore[reportUnknownMemberType]  # type: ignore
+    email_consumer.close()  # pyright: ignore[reportUnknownMemberType]  # type: ignore
 
 
 # Creating an app and adding handlers
@@ -588,6 +676,7 @@ app = (
         TELEGRAM_TOKEN
     )  # pyright: ignore[reportUnknownMemberType]  # type: ignore
     .post_init(post_init)
+    .post_shutdown(post_shutdown)
     .build()
 )
 
