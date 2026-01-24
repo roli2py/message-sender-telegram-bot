@@ -16,7 +16,7 @@ Follow the code of conduct when you're opening issues, making PR or communicatin
 
 ## Security issues
 
-Don't open issues for security problems. Instead, send them to an email: [romanmashevskyi@proton.me](mailto:romanmashevskyi@proton.me).
+See [`SECURITY.md`](SECURITY.md).
 
 ## Developing
 

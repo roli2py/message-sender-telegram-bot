@@ -57,7 +57,11 @@ Steps to set up the project:
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-## Code of Conduct
+### Security
+
+See [`SECURITY.md`](SECURITY.md)
+
+### Code of Conduct
 
 See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
