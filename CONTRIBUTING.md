@@ -4,7 +4,7 @@ Thank you that spending your time to contribute. It's very appreciatory, that yo
 
 Before doing something, fully read the file.
 
-In general, open an issue, if you don't know how to solve a problem and open PR instead, if you have a solution. 
+In general, open an issue, if you don't know how to solve a problem and open PR instead, if you have a solution.
 
 Below are described concrete actions to do for each type of a problem:
 1. If you see typos in docs, [`README.md`](README.md) and/or this file, open PR with changes.
@@ -37,12 +37,16 @@ To set up the workspace, follow this steps:
     ```bash
     pip install -e .[dev]
     ```
-4. Start to develop :)
-5. After the develop, start `make` to format and test the project:
+4. Install `prek`'s `pre-commit` hook:
+    ```bash
+    prek install
+    ```
+5. Start to develop :)
+6. After the develop, start `make` to format and test the project:
     ```bash
     make
     ```
-6. To run the project, see "[Running](README.md#running)" in [`README.md`](README.md) from a fourth to ninth clause.
+7. To run the project, see "[Running](README.md#running)" in [`README.md`](README.md) from a fourth to ninth clause.
 
 ### Makefile targets
 
