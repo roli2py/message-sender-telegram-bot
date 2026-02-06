@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from pytest import fixture, raises
 
-from libs import MessageSendCooldownChecker
+from message_sender_telegram_bot.libs import MessageSendCooldownChecker
 
 datetime_in_cooldown_period: datetime = datetime.fromisoformat(
     "2026-01-13T14:30:30Z"
@@ -35,9 +35,7 @@ def test_a_reject_of_an_init_without_a_cooldown_and_a_pass_date(
         ValueError,
         match="A cooldown or a pass date must be provided",
     ):
-        _ = MessageSendCooldownChecker(
-            last_send_date
-        )  # pyright: ignore[reportCallIssue]  # type: ignore
+        _ = MessageSendCooldownChecker(last_send_date)  # type: ignore
 
 
 def test_a_reject_of_an_init_with_a_cooldown_and_a_pass_date(
@@ -53,7 +51,7 @@ def test_a_reject_of_an_init_with_a_cooldown_and_a_pass_date(
             last_send_date,
             cooldown=cooldown,
             pass_date=pass_date,
-        )  # pyright: ignore[reportCallIssue]  # type: ignore
+        )  # type: ignore
 
 
 @fixture

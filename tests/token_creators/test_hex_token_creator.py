@@ -1,6 +1,6 @@
 from pytest import fixture
 
-from libs import HexToken, HexTokenCreator, Token
+from message_sender_telegram_bot.libs import HexToken, HexTokenCreator, Token
 
 
 @fixture

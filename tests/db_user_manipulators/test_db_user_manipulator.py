@@ -6,7 +6,11 @@ from pytest import fixture, raises
 from sqlalchemy import Result, Select
 from sqlalchemy.orm import Session
 
-from libs import DBUserManipulator, User, ValidToken
+from message_sender_telegram_bot.libs import (
+    DBUserManipulator,
+    User,
+    ValidToken,
+)
 
 user_id = 1234567
 token = "0123456789abcdef"
@@ -45,9 +49,7 @@ def test_reject_of_db_user_manipulator_init_without_user_id_and_db_user(
     db_session_mock: Session,
 ) -> None:
     with raises(ValueError, match="A user ID or a DB user must be provided"):
-        _ = DBUserManipulator(
-            db_session_mock
-        )  # pyright: ignore[reportCallIssue]  # type: ignore
+        _ = DBUserManipulator(db_session_mock)  # type: ignore
 
 
 @patch("libs.User", spec=User)
@@ -59,7 +61,7 @@ def test_a_reject_of_a_db_user_manipulator_init_with_a_user_id_and_a_db_user(
     with raises(
         ValueError, match="Only a user ID or a DB user must be provided"
     ):
-        _ = DBUserManipulator(  # pyright: ignore[reportCallIssue]  # type: ignore
+        _ = DBUserManipulator(  # type: ignore
             db_session_mock,
             user_id=user_id,
             db_user=db_user_mock,
@@ -107,14 +109,10 @@ def db_user_manipulator_with_a_db_user(
     spec=User,
 )
 def test_a_get_method_of_db_user_manipulator_with_a_user_id(
-    db_user_mock: User,  # pyright: ignore[reportUnusedParameter]  # type: ignore
-    select_function_mock: Callable[  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    db_user_mock: User,
+    select_function_mock: Callable[
         ...,
-        Select[
-            tuple[
-                Any, ...  # pyright: ignore[reportExplicitAny]  # type: ignore
-            ]
-        ],
+        Select[tuple[Any, ...]],
     ],
     db_user_manipulator_with_a_user_id: DBUserManipulator,
 ) -> None:

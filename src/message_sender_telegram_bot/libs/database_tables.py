@@ -21,12 +21,8 @@ convention: dict[str, str] = {
 }
 
 
-class Base(  # pyright: ignore[reportUnsafeMultipleInheritance]  # type: ignore
-    MappedAsDataclass, DeclarativeBase
-):
-    metadata = MetaData(  # pyright: ignore[reportUnannotatedClassAttribute]  # type: ignore
-        naming_convention=convention
-    )
+class Base(MappedAsDataclass, DeclarativeBase):
+    metadata = MetaData(naming_convention=convention)
 
 
 @final

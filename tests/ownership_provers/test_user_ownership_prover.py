@@ -2,7 +2,10 @@ from unittest.mock import MagicMock, patch
 
 from pytest import fixture
 
-from libs import DBUserManipulator, UserOwnershipProver
+from message_sender_telegram_bot.libs import (
+    DBUserManipulator,
+    UserOwnershipProver,
+)
 
 
 @fixture
