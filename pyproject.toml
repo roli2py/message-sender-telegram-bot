@@ -24,9 +24,6 @@ dev = [
     "sphinx ~= 9.1.0",
     "pytest ~= 9.0.2",
     "pytest-cov ~= 7.0.0",
-    "basedpyright ~= 1.37.1",
-    "isort ~= 7.0.0",
-    "black ~= 25.12.0",
     "prek ~= 0.3.0",
 ]
 
@@ -35,19 +32,6 @@ Home = "https://github.com/roli2py/message-sender-telegram-bot"
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
-pythonpath = ["./src/message_sender_telegram_bot"]
 
-[[tool.basedpyright.executionEnvironments]]
-root = "./src/message_sender_telegram_bot"
-
-[[tool.basedpyright.executionEnvironments]]
-root = "./tests"
-extraPaths = ["./src/message_sender_telegram_bot"]
-
-[tool.isort]
-profile = "black"
-skip_gitignore = true
-src_paths = ["./src/message_sender_telegram_bot"]
-
-[tool.black]
+[tool.ruff]
 line-length = 79

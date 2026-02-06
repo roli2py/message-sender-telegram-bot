@@ -19,7 +19,7 @@ from telegram.ext import (
     filters,
 )
 
-import libs
+import message_sender_telegram_bot.libs as libs
 
 if TYPE_CHECKING:
     from smtplib import SMTP
@@ -65,7 +65,7 @@ def send_email(name: str, text: str) -> None:
 # Handler that starts an authorization process
 async def start(
     update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    ctx: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
 
@@ -292,8 +292,7 @@ async def handle_message(
         if not is_cooldown_pass:
             _ = await chat.send_message(
                 (
-                    f"Send the message again after "
-                    f"{remaining_cooldown.seconds} seconds"
+                    f"Send the message again after {remaining_cooldown.seconds} seconds"
                 )
             )
             return
@@ -361,8 +360,7 @@ async def send(
     if not is_cooldown_pass:
         _ = await chat.send_message(
             (
-                f"Send the message again after {remaining_cooldown.seconds} "
-                f"seconds"
+                f"Send the message again after {remaining_cooldown.seconds} seconds"
             )
         )
         return
@@ -475,7 +473,7 @@ async def cancel(
 
 async def notify_about_unknown_command(
     update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    ctx: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
 
@@ -531,7 +529,7 @@ async def show_admin_panel(
 
 async def generate_token(
     update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    ctx: ContextTypes.DEFAULT_TYPE,
 ) -> None:
     chat: telegram.Chat | None = update.effective_chat
     user: telegram.User | None = update.effective_user
@@ -582,14 +580,7 @@ async def post_init(_) -> None:
 
 
 # Creating an app and adding handlers
-app = (
-    ApplicationBuilder()
-    .token(
-        TELEGRAM_TOKEN
-    )  # pyright: ignore[reportUnknownMemberType]  # type: ignore
-    .post_init(post_init)
-    .build()
-)
+app = ApplicationBuilder().token(TELEGRAM_TOKEN).post_init(post_init).build()
 
 start_command_handler = CommandHandler("start", start)
 admin_command_handler = CommandHandler("admin", show_admin_panel)

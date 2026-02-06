@@ -2,18 +2,15 @@ from typing import Self, override
 
 from pytest import fixture, raises
 
-from libs import CooldownChecker
+from message_sender_telegram_bot.libs import CooldownChecker
 
 
 @fixture
 def cooldown_checker_wrapper() -> CooldownChecker:
     class CooldownCheckerWrapper(CooldownChecker):
-
         @override
         def is_pass(self: Self) -> bool:
-            return (
-                super().is_pass()  # pyright: ignore[reportAbstractUsage]  # type: ignore
-            )
+            return super().is_pass()
 
     return CooldownCheckerWrapper()
 
@@ -22,9 +19,7 @@ def test_disallow_of_a_creation_of_an_cooldown_checker_interface_instance() -> (
     None
 ):
     with raises(TypeError):
-        _ = (
-            CooldownChecker()
-        )  # pyright: ignore[reportAbstractUsage]  # type: ignore
+        _ = CooldownChecker()
 
 
 def test_disallow_of_a_direct_using_of_an_is_pass_method(

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from pytest import fixture
 
-from libs import HexToken, TokenAuthorization
+from message_sender_telegram_bot.libs import HexToken, TokenAuthorization
 
 
 @fixture

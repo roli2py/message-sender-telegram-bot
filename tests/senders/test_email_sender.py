@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from pytest import fixture
 
-from libs import EmailSender
+from message_sender_telegram_bot.libs import EmailSender
 
 
 @fixture

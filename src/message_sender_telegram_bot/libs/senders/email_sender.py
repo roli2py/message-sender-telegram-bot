@@ -54,8 +54,7 @@ class EmailSender(Sender):
         else:
             logger.debug(
                 (
-                    "The sender name is not provided. Choosing the "
-                    '"Anonymous" name'
+                    'The sender name is not provided. Choosing the "Anonymous" name'
                 )
             )
             chosen_sender_name = "Anonymous"

@@ -4,9 +4,8 @@
 	// List of extensions which should be recommended for users of this workspace.
 	"recommendations": [
 		"njpwerner.autodocstring",
-		"detachhead.basedpyright",
-		"ms-python.black-formatter",
-		"ms-python.isort",
+		"charliermarsh.ruff",
+		"astral-sh.ty",
 		"jebbs.plantuml",
 		"ms-python.python",
 	],

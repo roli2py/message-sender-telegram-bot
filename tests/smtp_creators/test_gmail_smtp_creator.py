@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from pytest import fixture, raises
 
-from libs import GmailSMTPCreator
+from message_sender_telegram_bot.libs import GmailSMTPCreator
 
 CORRECT_SMTP_TEST_LOGIN = "SMTP_LOGIN"
 CORRECT_SMTP_TEST_PASSWORD = "SMTP_PASSWORD"

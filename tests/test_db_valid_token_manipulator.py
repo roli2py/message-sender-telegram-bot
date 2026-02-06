@@ -6,7 +6,10 @@ from pytest import fixture
 from sqlalchemy import Result, Select
 from sqlalchemy.orm import Session
 
-from libs import DBValidTokenManipulator, ValidToken
+from message_sender_telegram_bot.libs import (
+    DBValidTokenManipulator,
+    ValidToken,
+)
 
 # Session().execute
 db_session_execute_function_mock: MagicMock = MagicMock(
@@ -58,14 +61,10 @@ def db_valid_token_manipulator(
     spec=ValidToken,
 )
 def test_a_get_method_of_db_valid_token_manipulator(
-    db_valid_token_mock: ValidToken,  # pyright: ignore[reportUnusedParameter]  # type: ignore
-    select_function_mock: Callable[  # pyright: ignore[reportUnusedParameter]  # type: ignore
+    db_valid_token_mock: ValidToken,
+    select_function_mock: Callable[
         ...,
-        Select[
-            tuple[
-                Any, ...  # pyright: ignore[reportExplicitAny]  # type: ignore
-            ]
-        ],
+        Select[tuple[Any, ...]],
     ],
     db_valid_token_manipulator: DBValidTokenManipulator,
 ) -> None:
