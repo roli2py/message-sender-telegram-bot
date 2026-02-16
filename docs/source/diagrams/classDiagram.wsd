@@ -96,7 +96,7 @@ class DBUserManipulator {
 class DBValidTokenManipulator {
     - db_session: Session
     - token: String
-    + DBValidTokenManipulator(db_session: Session, token: String)
+    + DBValidTokenGetter(db_session: Session, token: String)
     + get(): ValidToken [0..1]
     + create(): ValidToken
 }
@@ -120,15 +120,6 @@ class MessageSendCooldownChecker {
     + MessageSendCooldownChecker(last_send_date: datetime, cooldown: timedelta = None, pass_date: datetime = None)
     + is_pass(): Boolean
 }
-class DBMessageManipulator {
-    - db_session: Session
-    - message_id: Integer
-    - sender: User [0..1]
-    - text: String [0..1]
-    + DBMessageManipulator(db_session: Session, message_id: Integer, sender: User = None, text: String = None)
-    + get(): Message [0..1]
-    + create(): Message
-}
 
 note left of None
     Indicating a lack of the value
@@ -141,7 +132,7 @@ note left of set
     An Python's unordered
     collection of distinct
     hashable objects.
-
+    
     T — Value Type
 endnote
 note right of DeclarativeBase
@@ -223,6 +214,4 @@ OwnershipProver <|.. UserOwnershipProver
 CooldownChecker <|.. MessageSendCooldownChecker
 datetime <-- MessageSendCooldownChecker
 timedelta <-- MessageSendCooldownChecker
-DBItemGetter <|-- DBMessageManipulator
-DBItemCreator <|-- DBMessageManipulator
 @enduml

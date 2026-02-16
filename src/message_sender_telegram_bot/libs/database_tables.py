@@ -33,14 +33,13 @@ class User(Base):
     user_id: Mapped[int] = mapped_column(BigInteger)
     is_authorizing: Mapped[bool]
     token_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("valid_token.id", onupdate="CASCADE", ondelete="SET NULL")
+        ForeignKey("valid_token.id", ondelete="SET NULL")
     )
     valid_token: Mapped["ValidToken | None"] = relationship(
         back_populates="user"
     )
     is_owner: Mapped[bool]
     last_send_date: Mapped[datetime | None]
-    messages: Mapped[list["Message"]] = relationship(back_populates="sender")
 
 
 @final
@@ -50,21 +49,3 @@ class ValidToken(Base):
     id_: Mapped[UUID] = mapped_column("id", primary_key=True)
     token: Mapped[str] = mapped_column(String(64))
     user: Mapped["User | None"] = relationship(back_populates="valid_token")
-
-
-@final
-class Message(Base):
-    __tablename__ = "message"
-
-    id_: Mapped[UUID] = mapped_column("id", primary_key=True)
-    message_id: Mapped[int] = mapped_column(BigInteger)
-    # When the program create a message, the `sender` attribute will set
-    # up the `sender_id`, so the `sender_id` can be `None` in code, but
-    # `NOT NULL` in DB
-    sender_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("user.id", onupdate="CASCADE", ondelete="RESTRICT"),
-        nullable=False,
-    )
-    sender: Mapped[User] = relationship(back_populates="messages")
-    text: Mapped[str] = mapped_column(String(4096))
-    is_sent: Mapped[bool]

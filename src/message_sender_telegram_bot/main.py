@@ -187,18 +187,15 @@ async def authorize(
     pass
 
 
-async def show_message_confirmation_panel(
-    chat: telegram.Chat,
-    message_id: int,
-) -> None:
+async def show_message_confirmation_panel(chat: telegram.Chat) -> None:
     yes_button: telegram.InlineKeyboardButton = telegram.InlineKeyboardButton(
         "Yes",
-        callback_data=f"message_confirmation,true,{message_id}",
+        callback_data="message_confirmation,true",
     )
 
     no_button: telegram.InlineKeyboardButton = telegram.InlineKeyboardButton(
         "No",
-        callback_data=f"message_confirmation,false,{message_id}",
+        callback_data="message_confirmation,false",
     )
 
     reply_markup: telegram.InlineKeyboardMarkup = (
@@ -301,20 +298,14 @@ async def handle_message(
             )
             return
 
-        with compiled_session() as session:
-            session.add(db_user)
+        user_data = ctx.user_data
 
-            db_message = libs.DBMessageManipulator(
-                session,
-                message.id,
-                sender=db_user,
-                text=message_text,
-            ).create()
-            session.add(db_message)
+        if user_data is None:
+            await chat.send_message("An unknown error is occured")
+            return
 
-            session.commit()
-
-        await show_message_confirmation_panel(chat, message.id)
+        user_data["message_text"] = message_text
+        await show_message_confirmation_panel(chat)
 
         return
 
@@ -388,33 +379,25 @@ async def send(
         await chat.send_message("An unknown error is occured")
         return
 
-    # A message ID will be always a third item after the split
-    assigned_message_id = int(callback_data.split(",")[2])
+    user_data = ctx.user_data
 
-    with compiled_session() as session:
-        db_message: libs.Message | None = libs.DBMessageManipulator(
-            session,
-            assigned_message_id,
-        ).get()
-
-    if db_message is None:
+    if (
+        user_data is None
+        or "message_text" not in user_data
+        or not isinstance(user_data["message_text"], str)
+    ):
         await chat.send_message("An unknown error is occured")
         return
 
-    if db_message.is_sent:
-        await message.edit_text("A message was already sent")
-        await callback_query.answer()
-        return
+    message_text: str = user_data["message_text"]
 
-    send_email(user.name, db_message.text)
+    send_email(user.name, message_text)
+
+    del user_data["message_text"]
 
     with compiled_session() as session:
-        session.add(db_message)
         session.add(db_user)
-
-        db_message.is_sent = True
         db_user.last_send_date = datetime.now()
-
         session.commit()
 
     await message.edit_text("The message have been sent")
@@ -473,32 +456,19 @@ async def cancel(
             await chat.send_message("An unknown error is occured")
             return
 
-        # A message ID will be always a third item after the split
-        assigned_message_id = int(callback_data.split(",")[2])
+        user_data = ctx.user_data
 
-        with compiled_session() as session:
-            db_message: libs.Message | None = libs.DBMessageManipulator(
-                session,
-                assigned_message_id,
-            ).get()
-
-        if db_message is None:
-            await chat.send_message("An unknown error is occured")
+        if user_data is None:
+            await chat.send_message("An unknown error is occued")
             return
 
-        if db_message.is_sent:
-            await message.edit_text("A message was already sent")
+        if "message_text" in user_data:
+            del user_data["message_text"]
+
+            await message.edit_text("The message send have been canceled")
             await callback_query.answer()
+
             return
-
-        with compiled_session() as session:
-            session.delete(db_message)
-            session.commit()
-
-        await message.edit_text("The message send have been canceled")
-        await callback_query.answer()
-
-        return
 
     await chat.send_message("Nothing to cancel")
 
@@ -624,10 +594,10 @@ token_generation_request_handler = CallbackQueryHandler(
     generate_token, re.compile(r"^generate_token$")
 )
 send_message_handler = CallbackQueryHandler(
-    send, re.compile(r"^message_confirmation,true,[0-9]{0,19}$")
+    send, re.compile(r"^message_confirmation,true$")
 )
 cancel_message_handler = CallbackQueryHandler(
-    cancel, re.compile(r"^message_confirmation,false,[0-9]{0,19}$")
+    cancel, re.compile(r"^message_confirmation,false$")
 )
 message_handler = MessageHandler(filters.TEXT, handle_message)
 
