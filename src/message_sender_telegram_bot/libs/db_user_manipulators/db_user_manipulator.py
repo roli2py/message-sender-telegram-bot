@@ -195,6 +195,7 @@ class DBUserManipulator(AbstractDBUserManipulator):
             valid_token=None,
             is_owner=False,
             last_send_date=None,
+            messages=[],
         )
         logger.debug("Created")
 
