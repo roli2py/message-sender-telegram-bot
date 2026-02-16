@@ -10,7 +10,8 @@ from message_sender_telegram_bot.libs import (
 
 @fixture
 @patch(
-    "libs.DBUserManipulator", get_owner_status=MagicMock(return_value=False)
+    "message_sender_telegram_bot.libs.DBUserManipulator",
+    get_owner_status=MagicMock(return_value=False),
 )
 def user_ownership_prover_without_ownership(
     db_user_manipulator_mock: DBUserManipulator,
@@ -19,7 +20,10 @@ def user_ownership_prover_without_ownership(
 
 
 @fixture
-@patch("libs.DBUserManipulator", get_owner_status=MagicMock(return_value=True))
+@patch(
+    "message_sender_telegram_bot.libs.DBUserManipulator",
+    get_owner_status=MagicMock(return_value=True),
+)
 def user_ownership_prover_with_ownership(
     db_user_manipulator_mock: DBUserManipulator,
 ) -> UserOwnershipProver:

@@ -53,11 +53,11 @@ def db_valid_token_manipulator(
 
 
 @patch(
-    "libs.db_valid_token_manipulator.select",
+    "message_sender_telegram_bot.libs.db_valid_token_manipulator.select",
     return_value=select_instance_mock,
 )
 @patch(
-    "libs.db_valid_token_manipulator.ValidToken",
+    "message_sender_telegram_bot.libs.db_valid_token_manipulator.ValidToken",
     spec=ValidToken,
 )
 def test_a_get_method_of_db_valid_token_manipulator(

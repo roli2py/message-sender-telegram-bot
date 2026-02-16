@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you that spending your time to contribute. It's very appreciatory, that you want to improve the project.
+Thank you for spending your time to contribute. It's very appreciatory, that you want to improve the project.
 
 Before doing something, fully read the file.
 
@@ -33,7 +33,7 @@ To set up the workspace, follow this steps:
     ```bash
     cd message-sender-telegram-bot
     ```
-3. Install the project's package in an editable mode with the `dev` deps by `uv`:
+3. Install the package in an editable mode with the `dev` deps by `uv`:
     ```bash
     uv sync --extra dev
     ```

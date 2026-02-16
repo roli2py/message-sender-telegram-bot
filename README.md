@@ -19,13 +19,13 @@ Steps to set up the project:
     ```bash
     cd message-sender-telegram-bot
     ```
-3. Install the dependencies with `uv` (recommended) or with `pip`:
+3. Install the package by `uv` (recommended) or `pip`:
     ```bash
-    # Install dependencies with `uv`
+    # Install by `uv`
     uv sync
 
-    # ... or install dependencies with `pip`
-    pip install -r requirements.txt
+    # ...or by `pip`
+    pip install .
     ```
 4. Fill a `sqlalchemy.url` property in the `alembic.ini` file:
     ```ini
@@ -48,13 +48,9 @@ Steps to set up the project:
     set -a && source .env && set +a
     ```
     Reference: https://gist.github.com/mihow/9c7f559807069a03e302605691f85572
-9. Navigate to the project's package:
+9. Run the `main` module of the `message_sender_telegram_bot` package:
     ```bash
-    cd src/message_sender_telegram_bot
-    ```
-10. Run the `main.py` file:
-    ```bash
-    python3 main.py
+    python3 -m message_sender_telegram_bot.main
     ```
 
 ## Contributing

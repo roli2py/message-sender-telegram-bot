@@ -2,7 +2,6 @@
 -r requirements-docs.txt
 -r requirements-test.txt
 
-basedpyright ~= 1.37.1
-isort ~= 7.0.0
-black ~= 25.12.0
+ruff ~= 0.15.1
+ty ~= 0.0.17
 prek ~= 0.3.0

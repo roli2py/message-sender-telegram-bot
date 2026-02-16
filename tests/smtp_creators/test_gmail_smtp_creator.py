@@ -44,7 +44,10 @@ def gmail_smtp_creator_with_bad_credentials() -> GmailSMTPCreator:
 
 
 @patch(
-    "libs.smtp_creators.gmail_smtp_creator.SMTP_SSL",
+    (
+        "message_sender_telegram_bot.libs.smtp_creators.gmail_smtp_creator."
+        "SMTP_SSL"
+    ),
     return_value=MagicMock(
         spec=SMTP_SSL,
         login=login_func_mock,
@@ -57,7 +60,10 @@ def test_smtp_creation(_, gmail_smtp_creator: GmailSMTPCreator) -> None:
 
 
 @patch(
-    "libs.smtp_creators.gmail_smtp_creator.SMTP_SSL",
+    (
+        "message_sender_telegram_bot.libs.smtp_creators.gmail_smtp_creator."
+        "SMTP_SSL"
+    ),
     return_value=MagicMock(
         spec=SMTP_SSL,
         login=login_func_mock,

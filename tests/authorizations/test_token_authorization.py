@@ -6,13 +6,13 @@ from message_sender_telegram_bot.libs import HexToken, TokenAuthorization
 
 
 @fixture
-@patch("libs.HexToken", get="0123456789abcdef")
+@patch("message_sender_telegram_bot.libs.HexToken", get="0123456789abcdef")
 def valid_token(hex_token_mock: HexToken) -> HexToken:
     return hex_token_mock
 
 
 @fixture
-@patch("libs.HexToken", get="abcdef0123456789")
+@patch("message_sender_telegram_bot.libs.HexToken", get="abcdef0123456789")
 def invalid_token(hex_token_mock: HexToken) -> HexToken:
     return hex_token_mock
 

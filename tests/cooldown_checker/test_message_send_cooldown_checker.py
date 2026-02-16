@@ -71,7 +71,10 @@ def message_send_cooldown_checker_with_pass_date(
 
 
 @patch(
-    "libs.cooldown_checkers.message_send_cooldown_checker.datetime",
+    (
+        "message_sender_telegram_bot.libs.cooldown_checkers."
+        "message_send_cooldown_checker.datetime"
+    ),
     spec=datetime,
     now=MagicMock(return_value=datetime_in_cooldown_period),
 )
@@ -88,7 +91,10 @@ def test_an_is_pass_method_with_a_cooldown_in_a_cooldown_period(
 
 
 @patch(
-    "libs.cooldown_checkers.message_send_cooldown_checker.datetime",
+    (
+        "message_sender_telegram_bot.libs.cooldown_checkers."
+        "message_send_cooldown_checker.datetime"
+    ),
     spec=datetime,
     now=MagicMock(return_value=datetime_in_cooldown_period),
 )
@@ -105,7 +111,10 @@ def test_an_is_pass_method_with_a_pass_date_in_a_cooldown_period(
 
 
 @patch(
-    "libs.cooldown_checkers.message_send_cooldown_checker.datetime",
+    (
+        "message_sender_telegram_bot.libs.cooldown_checkers."
+        "message_send_cooldown_checker.datetime"
+    ),
     spec=datetime,
     now=MagicMock(return_value=datetime_out_of_cooldown_period),
 )
@@ -122,7 +131,10 @@ def test_an_is_pass_method_with_a_cooldown_out_of_a_cooldown_period(
 
 
 @patch(
-    "libs.cooldown_checkers.message_send_cooldown_checker.datetime",
+    (
+        "message_sender_telegram_bot.libs.cooldown_checkers."
+        "message_send_cooldown_checker.datetime"
+    ),
     spec=datetime,
     now=MagicMock(return_value=datetime_out_of_cooldown_period),
 )
