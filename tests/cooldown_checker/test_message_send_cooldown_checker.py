@@ -35,7 +35,7 @@ def test_a_reject_of_an_init_without_a_cooldown_and_a_pass_date(
         ValueError,
         match="A cooldown or a pass date must be provided",
     ):
-        _ = MessageSendCooldownChecker(last_send_date)  # type: ignore
+        MessageSendCooldownChecker(last_send_date)  # type: ignore
 
 
 def test_a_reject_of_an_init_with_a_cooldown_and_a_pass_date(
@@ -47,7 +47,7 @@ def test_a_reject_of_an_init_with_a_cooldown_and_a_pass_date(
         ValueError,
         match="Only a cooldown or a pass date must be provided",
     ):
-        _ = MessageSendCooldownChecker(
+        MessageSendCooldownChecker(
             last_send_date,
             cooldown=cooldown,
             pass_date=pass_date,

@@ -104,7 +104,8 @@ class DBUserManipulator(AbstractDBUserManipulator):
 
         logger.debug(
             (
-                "Assigning the arguments to the corresponding instance attributes..."
+                "Assigning the arguments to the corresponding instance "
+                "attributes..."
             )
         )
         self.__db_session: Session = db_session
@@ -257,7 +258,8 @@ class DBUserManipulator(AbstractDBUserManipulator):
             raise ValueError("A DB user is absent")
         logger.debug(
             (
-                "A DB user is present. Continuing the getting of the DB valid token..."
+                "A DB user is present. Continuing the getting of the DB valid "
+                "token..."
             )
         )
 
@@ -318,7 +320,8 @@ class DBUserManipulator(AbstractDBUserManipulator):
             raise ValueError("A DB user is absent")
         logger.debug(
             (
-                "A DB user is present. Continuing the setting of the DB valid token..."
+                "A DB user is present. Continuing the setting of the DB valid "
+                "token..."
             )
         )
 
@@ -344,7 +347,8 @@ class DBUserManipulator(AbstractDBUserManipulator):
             raise ValueError("A DB user is absent")
         logger.debug(
             (
-                "A DB user is present. Continuing the clearing of the DB valid token..."
+                "A DB user is present. Continuing the clearing of the DB "
+                "valid token..."
             )
         )
 
@@ -373,7 +377,8 @@ class DBUserManipulator(AbstractDBUserManipulator):
             raise ValueError("A DB user is absent")
         logger.debug(
             (
-                "A DB user is present. Continuing the clearing of the DB valid token..."
+                "A DB user is present. Continuing the clearing of the DB "
+                "valid token..."
             )
         )
 

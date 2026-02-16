@@ -75,7 +75,7 @@ async def start(
     user: telegram.User | None = update.effective_user
 
     if user is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     with compiled_session() as session:
@@ -95,7 +95,7 @@ async def start(
             session.add(new_db_user)
             session.commit()
 
-        _ = await chat.send_message("Enter the token")
+        await chat.send_message("Enter the token")
 
         return
 
@@ -107,7 +107,7 @@ async def start(
         ).get_authorizing_status()
 
     if is_user_authorizing:
-        _ = await chat.send_message("Enter the token")
+        await chat.send_message("Enter the token")
         return
 
     with compiled_session() as session:
@@ -128,13 +128,13 @@ async def start(
             ).set_authorizing_status(True)
             session.commit()
 
-        _ = await chat.send_message(
+        await chat.send_message(
             "Your token is expired. Please, enter a new token"
         )
         return
 
     # If other cases is not invoked, then the user is authorized
-    _ = await chat.send_message("You're already authorized")
+    await chat.send_message("You're already authorized")
 
 
 async def authorize(
@@ -149,7 +149,7 @@ async def authorize(
     # When a hex token is wrong, the constructor will throw a
     # `ValueError` exception
     except ValueError:
-        _ = await chat.send_message(
+        await chat.send_message(
             (
                 "The token contains not-compitable symbols. Please, check "
                 "your token and try again"
@@ -167,7 +167,7 @@ async def authorize(
     # If a DB valid token with a user-provided token is not exist,
     # then the token is expired or invalid
     if not isinstance(valid_token, libs.ValidToken):
-        _ = await chat.send_message(
+        await chat.send_message(
             "The token is not valid. Please, provide an another token"
         )
         return
@@ -183,7 +183,7 @@ async def authorize(
         db_user_manipulator.set_authorizing_status(False)
         session.commit()
 
-    _ = await chat.send_message("You're authorized")
+    await chat.send_message("You're authorized")
     pass
 
 
@@ -201,7 +201,7 @@ async def show_message_confirmation_panel(chat: telegram.Chat) -> None:
     reply_markup: telegram.InlineKeyboardMarkup = (
         telegram.InlineKeyboardMarkup([[yes_button, no_button]])
     )
-    _ = await chat.send_message(
+    await chat.send_message(
         "Send a message?",
         reply_markup=reply_markup,
     )
@@ -243,19 +243,19 @@ async def handle_message(
     user: telegram.User | None = update.effective_user
 
     if user is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     message: telegram.Message | None = update.effective_message
 
     if message is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     message_text: str | None = message.text
 
     if message_text is None:
-        _ = await chat.send_message(
+        await chat.send_message(
             "Your message doesn't have a text. Send a message with a text"
         )
         return
@@ -268,7 +268,7 @@ async def handle_message(
 
     # If a DB user is not exists, then he's not authozired
     if not isinstance(db_user, libs.User):
-        _ = await chat.send_message(
+        await chat.send_message(
             (
                 "You're not authorized. Please, type a /start command to "
                 "initiate an authorization"
@@ -290,9 +290,10 @@ async def handle_message(
         is_cooldown_pass, remaining_cooldown = await check_cooldown(db_user)
 
         if not is_cooldown_pass:
-            _ = await chat.send_message(
+            await chat.send_message(
                 (
-                    f"Send the message again after {remaining_cooldown.seconds} seconds"
+                    f"Send the message again after "
+                    f"{remaining_cooldown.seconds} seconds"
                 )
             )
             return
@@ -300,7 +301,7 @@ async def handle_message(
         user_data = ctx.user_data
 
         if user_data is None:
-            _ = await chat.send_message("An unknown error is occured")
+            await chat.send_message("An unknown error is occured")
             return
 
         user_data["message_text"] = message_text
@@ -322,13 +323,13 @@ async def send(
     user: telegram.User | None = update.effective_user
 
     if user is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     message: telegram.Message | None = update.effective_message
 
     if message is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     with compiled_session() as session:
@@ -338,7 +339,7 @@ async def send(
 
     # If a DB user is not exists, then he's not authozired
     if not isinstance(db_user, libs.User):
-        _ = await chat.send_message(
+        await chat.send_message(
             (
                 "You're not authorized. Please, type a /start command to "
                 "initiate an authorization"
@@ -353,14 +354,15 @@ async def send(
         ).get_authorizing_status()
 
     if is_user_authorizing:
-        _ = await chat.send_message("Send a token to authorize")
+        await chat.send_message("Send a token to authorize")
 
     is_cooldown_pass, remaining_cooldown = await check_cooldown(db_user)
 
     if not is_cooldown_pass:
-        _ = await chat.send_message(
+        await chat.send_message(
             (
-                f"Send the message again after {remaining_cooldown.seconds} seconds"
+                f"Send the message again after {remaining_cooldown.seconds} "
+                f"seconds"
             )
         )
         return
@@ -368,13 +370,13 @@ async def send(
     callback_query: telegram.CallbackQuery | None = update.callback_query
 
     if callback_query is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     callback_data: str | None = callback_query.data
 
     if callback_data is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     user_data = ctx.user_data
@@ -384,7 +386,7 @@ async def send(
         or "message_text" not in user_data
         or not isinstance(user_data["message_text"], str)
     ):
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     message_text: str = user_data["message_text"]
@@ -398,8 +400,8 @@ async def send(
         db_user.last_send_date = datetime.now()
         session.commit()
 
-    _ = await message.edit_text("The message have been sent")
-    _ = await callback_query.answer()
+    await message.edit_text("The message have been sent")
+    await callback_query.answer()
 
 
 async def cancel(
@@ -414,7 +416,7 @@ async def cancel(
     user: telegram.User | None = update.effective_user
 
     if user is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     with compiled_session() as session:
@@ -435,7 +437,7 @@ async def cancel(
                 session.delete(db_user)
                 session.commit()
 
-            _ = await chat.send_message("An authorizing have been canceled")
+            await chat.send_message("An authorizing have been canceled")
 
             return
 
@@ -445,30 +447,30 @@ async def cancel(
         message: telegram.Message | None = update.effective_message
 
         if message is None:
-            _ = await chat.send_message("An unknown error is occured")
+            await chat.send_message("An unknown error is occured")
             return
 
         callback_data: str | None = callback_query.data
 
         if callback_data is None:
-            _ = await chat.send_message("An unknown error is occured")
+            await chat.send_message("An unknown error is occured")
             return
 
         user_data = ctx.user_data
 
         if user_data is None:
-            _ = await chat.send_message("An unknown error is occued")
+            await chat.send_message("An unknown error is occued")
             return
 
         if "message_text" in user_data:
             del user_data["message_text"]
 
-            _ = await message.edit_text("The message send have been canceled")
-            _ = await callback_query.answer()
+            await message.edit_text("The message send have been canceled")
+            await callback_query.answer()
 
             return
 
-    _ = await chat.send_message("Nothing to cancel")
+    await chat.send_message("Nothing to cancel")
 
 
 async def notify_about_unknown_command(
@@ -480,7 +482,7 @@ async def notify_about_unknown_command(
     if chat is None:
         return
 
-    _ = await chat.send_message("An unknown command")
+    await chat.send_message("An unknown command")
 
 
 # TODO realize a "Delete a token" button
@@ -495,14 +497,14 @@ async def show_admin_panel(
         return
 
     if user is None:
-        _ = await chat.send_message("You're not owner of the bot")
+        await chat.send_message("You're not owner of the bot")
         return
 
     with compiled_session() as session:
         db_user_manipulator: libs.DBUserManipulator = libs.DBUserManipulator(
             session, user_id=user.id
         )
-        _ = db_user_manipulator.get()
+        db_user_manipulator.get()
         is_user_owner: bool = libs.UserOwnershipProver(
             db_user_manipulator
         ).prove()
@@ -522,7 +524,7 @@ async def show_admin_panel(
             )
         )
     )
-    _ = await chat.send_message(
+    await chat.send_message(
         "What do you want to do?", reply_markup=reply_markup
     )
 
@@ -539,20 +541,20 @@ async def generate_token(
         return
 
     if user is None or callback_query is None:
-        _ = await chat.send_message("An unknown error is occured")
+        await chat.send_message("An unknown error is occured")
         return
 
     with compiled_session() as session:
         db_user_manipulator: libs.DBUserManipulator = libs.DBUserManipulator(
             session, user_id=user.id
         )
-        _ = db_user_manipulator.get()
+        db_user_manipulator.get()
         is_user_owner: bool = libs.UserOwnershipProver(
             db_user_manipulator
         ).prove()
 
     if not is_user_owner:
-        _ = await chat.send_message("You're not owner of the bot")
+        await chat.send_message("You're not owner of the bot")
         return
 
     hex_token: libs.Token = libs.HexTokenCreator().create()
@@ -565,14 +567,14 @@ async def generate_token(
         session.commit()
 
     if chat.type != ChatType.PRIVATE:
-        _ = await chat.send_message("Sent a new token to DM")
+        await chat.send_message("Sent a new token to DM")
 
-    _ = await user.send_message(
+    await user.send_message(
         f"Here's a new token:\n`{hex_token.get()}`",
         parse_mode=ParseMode.MARKDOWN_V2,
     )
 
-    _ = await callback_query.answer()
+    await callback_query.answer()
 
 
 async def post_init(_) -> None:

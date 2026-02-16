@@ -19,8 +19,12 @@ Steps to set up the project:
     ```bash
     cd message-sender-telegram-bot
     ```
-3. Install the dependencies:
+3. Install the dependencies with `uv` (recommended) or with `pip`:
     ```bash
+    # Install dependencies with `uv`
+    uv sync
+
+    # ... or install dependencies with `pip`
     pip install -r requirements.txt
     ```
 4. Fill a `sqlalchemy.url` property in the `alembic.ini` file:
@@ -68,4 +72,3 @@ See [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 ## License
 
 See [`LICENSE`](LICENSE).
-

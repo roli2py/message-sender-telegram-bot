@@ -2,11 +2,10 @@
 all: typecheck format test
 
 typecheck:
-	basedpyright
+	ty check
 
 format:
-	isort .
-	black .
+	ruff format
 
 test:
 	pytest --cov=src/message_sender_telegram_bot/libs

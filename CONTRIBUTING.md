@@ -33,9 +33,9 @@ To set up the workspace, follow this steps:
     ```bash
     cd message-sender-telegram-bot
     ```
-3. Install the project's package in an editable mode with the `dev` deps:
+3. Install the project's package in an editable mode with the `dev` deps by `uv`:
     ```bash
-    pip install -e .[dev]
+    uv sync --extra dev
     ```
 4. Install `prek`'s `pre-commit` hook:
     ```bash
@@ -57,8 +57,8 @@ make test
 
 Available targets:
 1. `all` — Invokes all targets. Invoked by default, if `make` is started without the target.
-2. `typecheck` — Type checks the project by `basedpyright`.
-2. `format` — Formats the project by `isort` and `black`.
+2. `typecheck` — Type checks the project by `ty`.
+2. `format` — Formats the project by `ruff`.
 3. `test` — Starts the unittests by `pytest`.
 
 ### UML class diagram
