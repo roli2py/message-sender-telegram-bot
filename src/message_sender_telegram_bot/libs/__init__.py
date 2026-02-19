@@ -10,6 +10,7 @@ from .db_user_manipulators import AbstractDBUserManipulator, DBUserManipulator
 from .db_valid_token_manipulator import DBValidTokenManipulator
 from .ownership_provers import OwnershipProver, UserOwnershipProver
 from .senders import EmailSender, Sender
+from .settings import Settings
 from .smtp_creators import GmailSMTPCreator, SMTPCreator
 from .token_creators import HexTokenCreator, TokenCreator
 from .tokens import HexToken, Token
@@ -32,6 +33,7 @@ __all__ = [
     "UserOwnershipProver",
     "EmailSender",
     "Sender",
+    "Settings",
     "GmailSMTPCreator",
     "SMTPCreator",
     "HexTokenCreator",

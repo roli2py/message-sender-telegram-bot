@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timedelta
-from os import environ
-from smtplib import SMTP
 from typing import TYPE_CHECKING
 
 import telegram
@@ -14,32 +12,38 @@ from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
     CommandHandler,
-    ContextTypes,
     MessageHandler,
     filters,
 )
 
 import message_sender_telegram_bot.libs as libs
+from message_sender_telegram_bot.libs import Settings
 
 if TYPE_CHECKING:
     from smtplib import SMTP
 
     from sqlalchemy import Engine
     from sqlalchemy.orm import Session
+    from telegram.ext import ContextTypes
 
-# Data from the environment variables
-TELEGRAM_TOKEN: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_TELEGRAM_TOKEN"]
-DB_USER: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_DB_USER"]
-DB_PASSWORD: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_DB_PASSWORD"]
-DB_HOST: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_DB_HOST"]
-DB_PORT: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_DB_PORT"]
-DB_NAME: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_DB_NAME"]
-GMAIL_SMTP_LOGIN: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_GMAIL_SMTP_LOGIN"]
-GMAIL_SMTP_PASSWORD: str = environ[
-    "MESSAGE_SENDER_TELEGRAM_BOT_GMAIL_SMTP_PASSWORD"
-]
-EMAIL_FROM_ADDR: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_EMAIL_FROM_ADDR"]
-EMAIL_TO_ADDR: str = environ["MESSAGE_SENDER_TELEGRAM_BOT_EMAIL_TO_ADDR"]
+# Getting values from the environment variables
+#
+# Type checker throws errors about the missing arguments, but Pydantic
+# anyway gets the values from the environment, so the error is
+# suppressed
+settings = Settings()  # type: ignore[missing-argument]
+
+# Assigning the received values to consts
+TELEGRAM_TOKEN: str = settings.telegram_token
+DB_USER: str = settings.db_user
+DB_PASSWORD: str = settings.db_password
+DB_HOST: str = settings.db_host
+DB_PORT: int = settings.db_port
+DB_NAME: str = settings.db_name
+GMAIL_SMTP_LOGIN: str = settings.gmail_smtp_login
+GMAIL_SMTP_PASSWORD: str = settings.gmail_smtp_password
+EMAIL_FROM_ADDR: str = settings.email_from_addr
+EMAIL_TO_ADDR: str = settings.email_to_addr
 
 database_engine: Engine = create_engine(
     f"mysql+mysqldb://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
