@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for spending your time to contribute. It's very appreciatory, that you want to improve the project.
+Thank you for spending your time to contribute. It's very appreciative, that you want to improve the project.
 
 Before doing something, fully read the file.
 
