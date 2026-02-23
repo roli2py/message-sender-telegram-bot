@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta
+from logging import getLogger
 from typing import TYPE_CHECKING
+from urllib.parse import SplitResult
 
-import telegram
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from telegram.constants import ChatType, ParseMode
 from telegram.ext import (
     ApplicationBuilder,
     CallbackQueryHandler,
@@ -16,15 +15,16 @@ from telegram.ext import (
     filters,
 )
 
-import message_sender_telegram_bot.libs as libs
-from message_sender_telegram_bot.libs import Settings
+from .libs import Handlers, Helpers, Settings
+from .libs.consts import Commands
 
 if TYPE_CHECKING:
-    from smtplib import SMTP
+    from logging import Logger
 
     from sqlalchemy import Engine
     from sqlalchemy.orm import Session
-    from telegram.ext import ContextTypes
+
+logger: Logger = getLogger(__name__)
 
 # Getting values from the environment variables
 #
@@ -33,607 +33,58 @@ if TYPE_CHECKING:
 # suppressed
 settings = Settings()  # type: ignore[missing-argument]
 
-# Assigning the received values to consts
-TELEGRAM_TOKEN: str = settings.telegram_token
-DB_USER: str = settings.db_user
-DB_PASSWORD: str = settings.db_password
-DB_HOST: str = settings.db_host
-DB_PORT: int = settings.db_port
-DB_NAME: str = settings.db_name
-GMAIL_SMTP_LOGIN: str = settings.gmail_smtp_login
-GMAIL_SMTP_PASSWORD: str = settings.gmail_smtp_password
-EMAIL_FROM_ADDR: str = settings.email_from_addr
-EMAIL_TO_ADDR: str = settings.email_to_addr
+db_url = SplitResult(
+    "mysql+mysqldb",
+    (
+        f"{settings.db_user}:{settings.db_password}@"
+        f"{settings.db_host}:{settings.db_port}"
+    ),
+    settings.db_name,
+).geturl()
 
-database_engine: Engine = create_engine(
-    f"mysql+mysqldb://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
-    pool_pre_ping=True,
-)
+database_engine: Engine = create_engine(db_url, pool_pre_ping=True)
 compiled_session: sessionmaker[Session] = sessionmaker(database_engine)
 
-
-def send_email(name: str, text: str) -> None:
-    smtp: SMTP = libs.GmailSMTPCreator(
-        GMAIL_SMTP_LOGIN,
-        GMAIL_SMTP_PASSWORD,
-    ).create()
-    email_sender: libs.EmailSender = libs.EmailSender(
-        smtp,
-        EMAIL_FROM_ADDR,
-        EMAIL_TO_ADDR,
-        sender_name=name,
-    )
-    email_sender.send(text)
-
-
-# Handler that starts an authorization process
-async def start(
-    update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,
-) -> None:
-    chat: telegram.Chat | None = update.effective_chat
-
-    if chat is None:
-        return
-
-    user: telegram.User | None = update.effective_user
-
-    if user is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    with compiled_session() as session:
-        db_user: libs.User | None = libs.DBUserManipulator(
-            session,
-            user_id=user.id,
-        ).get()
-
-    # If a DB user is not exist, starting an authorization process
-    if not isinstance(db_user, libs.User):
-        with compiled_session() as session:
-            # A creating of a DB user starts an authorization process
-            new_db_user: libs.User = libs.DBUserManipulator(
-                session,
-                user_id=user.id,
-            ).create()
-            session.add(new_db_user)
-            session.commit()
-
-        await chat.send_message("Enter the token")
-
-        return
-
-    with compiled_session() as session:
-        session.add(db_user)
-        is_user_authorizing: bool = libs.DBUserManipulator(
-            session,
-            db_user=db_user,
-        ).get_authorizing_status()
-
-    if is_user_authorizing:
-        await chat.send_message("Enter the token")
-        return
-
-    with compiled_session() as session:
-        session.add(db_user)
-        valid_token: libs.ValidToken | None = libs.DBUserManipulator(
-            session,
-            db_user=db_user,
-        ).get_valid_token()
-
-    # If a DB user is authorized and a DB valid token is not exist, then
-    # the token is expired and the user must enter a new token
-    if not isinstance(valid_token, libs.ValidToken):
-        with compiled_session() as session:
-            session.add(db_user)
-            libs.DBUserManipulator(
-                session,
-                db_user=db_user,
-            ).set_authorizing_status(True)
-            session.commit()
-
-        await chat.send_message(
-            "Your token is expired. Please, enter a new token"
-        )
-        return
-
-    # If other cases is not invoked, then the user is authorized
-    await chat.send_message("You're already authorized")
-
-
-async def authorize(
-    chat: telegram.Chat,
-    message_text: str,
-    db_user: libs.User,
-) -> None:
-    # Assuming, that a user invoked a `start` command and this
-    # message contains an authorization token
-    try:
-        hex_token: libs.HexToken = libs.HexToken(message_text)
-    # When a hex token is wrong, the constructor will throw a
-    # `ValueError` exception
-    except ValueError:
-        await chat.send_message(
-            (
-                "The token contains not-compitable symbols. Please, check "
-                "your token and try again"
-            )
-        )
-        return
-
-    with compiled_session() as session:
-        session.add(db_user)
-        valid_token: libs.ValidToken | None = libs.DBValidTokenManipulator(
-            session,
-            hex_token.get(),
-        ).get()
-
-    # If a DB valid token with a user-provided token is not exist,
-    # then the token is expired or invalid
-    if not isinstance(valid_token, libs.ValidToken):
-        await chat.send_message(
-            "The token is not valid. Please, provide an another token"
-        )
-        return
-
-    # On this step, the user is pass the challenges, so the user is
-    # authorized
-    with compiled_session() as session:
-        session.add(db_user)
-        db_user_manipulator: libs.DBUserManipulator = libs.DBUserManipulator(
-            session, db_user=db_user
-        )
-        db_user_manipulator.set_valid_token(valid_token)
-        db_user_manipulator.set_authorizing_status(False)
-        session.commit()
-
-    await chat.send_message("You're authorized")
-    pass
-
-
-async def show_message_confirmation_panel(
-    chat: telegram.Chat,
-    message_id: int,
-) -> None:
-    yes_button: telegram.InlineKeyboardButton = telegram.InlineKeyboardButton(
-        "Yes",
-        callback_data=f"message_confirmation,true,{message_id}",
-    )
-
-    no_button: telegram.InlineKeyboardButton = telegram.InlineKeyboardButton(
-        "No",
-        callback_data=f"message_confirmation,false,{message_id}",
-    )
-
-    reply_markup: telegram.InlineKeyboardMarkup = (
-        telegram.InlineKeyboardMarkup([[yes_button, no_button]])
-    )
-    await chat.send_message(
-        "Send a message?",
-        reply_markup=reply_markup,
-    )
-
-
-async def check_cooldown(db_user: libs.User) -> tuple[bool, timedelta]:
-    with compiled_session() as session:
-        session.add(db_user)
-        last_send_date: datetime | None = db_user.last_send_date
-
-    if last_send_date is None:
-        return (True, timedelta())
-
-    cooldown: timedelta = timedelta(seconds=30)
-
-    is_cooldown_pass: bool = libs.MessageSendCooldownChecker(
-        last_send_date,
-        cooldown=cooldown,
-    ).is_pass()
-
-    if is_cooldown_pass:
-        return (True, timedelta())
-
-    diff_between_dates: timedelta = datetime.now() - last_send_date
-    remaining_cooldown: timedelta = cooldown - diff_between_dates
-
-    return (False, remaining_cooldown)
-
-
-async def handle_message(
-    update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,
-) -> None:
-    chat: telegram.Chat | None = update.effective_chat
-
-    if chat is None:
-        return
-
-    user: telegram.User | None = update.effective_user
-
-    if user is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    message: telegram.Message | None = update.effective_message
-
-    if message is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    message_text: str | None = message.text
-
-    if message_text is None:
-        await chat.send_message(
-            "Your message doesn't have a text. Send a message with a text"
-        )
-        return
-
-    with compiled_session() as session:
-        db_user: libs.User | None = libs.DBUserManipulator(
-            session,
-            user_id=user.id,
-        ).get()
-
-    # If a DB user is not exists, then he's not authozired
-    if not isinstance(db_user, libs.User):
-        await chat.send_message(
-            (
-                "You're not authorized. Please, type a /start command to "
-                "initiate an authorization"
-            )
-        )
-        return
-
-    with compiled_session() as session:
-        session.add(db_user)
-        is_user_authorizing: bool = libs.DBUserManipulator(
-            session,
-            db_user=db_user,
-        ).get_authorizing_status()
-
-    if is_user_authorizing:
-        await authorize(chat, message_text, db_user)
-        return
-    else:
-        is_cooldown_pass, remaining_cooldown = await check_cooldown(db_user)
-
-        if not is_cooldown_pass:
-            await chat.send_message(
-                (
-                    f"Send the message again after "
-                    f"{remaining_cooldown.seconds} seconds"
-                )
-            )
-            return
-
-        with compiled_session() as session:
-            session.add(db_user)
-
-            db_message = libs.DBMessageManipulator(
-                session,
-                message.id,
-                sender=db_user,
-                text=message_text,
-            ).create()
-            session.add(db_message)
-
-            session.commit()
-
-        await show_message_confirmation_panel(chat, message.id)
-
-        return
-
-
-# Handler that pass the message to the senders
-async def send(
-    update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,
-) -> None:
-    chat: telegram.Chat | None = update.effective_chat
-
-    if chat is None:
-        return
-
-    user: telegram.User | None = update.effective_user
-
-    if user is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    message: telegram.Message | None = update.effective_message
-
-    if message is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    with compiled_session() as session:
-        db_user: libs.User | None = libs.DBUserManipulator(
-            session, user_id=user.id
-        ).get()
-
-    # If a DB user is not exists, then he's not authozired
-    if not isinstance(db_user, libs.User):
-        await chat.send_message(
-            (
-                "You're not authorized. Please, type a /start command to "
-                "initiate an authorization"
-            )
-        )
-        return
-
-    with compiled_session() as session:
-        session.add(db_user)
-        is_user_authorizing: bool = libs.DBUserManipulator(
-            session, db_user=db_user
-        ).get_authorizing_status()
-
-    if is_user_authorizing:
-        await chat.send_message("Send a token to authorize")
-
-    is_cooldown_pass, remaining_cooldown = await check_cooldown(db_user)
-
-    if not is_cooldown_pass:
-        await chat.send_message(
-            (
-                f"Send the message again after {remaining_cooldown.seconds} "
-                f"seconds"
-            )
-        )
-        return
-
-    callback_query: telegram.CallbackQuery | None = update.callback_query
-
-    if callback_query is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    callback_data: str | None = callback_query.data
-
-    if callback_data is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    # A message ID will be always a third item after the split
-    assigned_message_id = int(callback_data.split(",")[2])
-
-    with compiled_session() as session:
-        db_message: libs.Message | None = libs.DBMessageManipulator(
-            session,
-            assigned_message_id,
-        ).get()
-
-    if db_message is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    if db_message.is_sent:
-        await message.edit_text("A message was already sent")
-        await callback_query.answer()
-        return
-
-    send_email(user.name, db_message.text)
-
-    with compiled_session() as session:
-        session.add(db_message)
-        session.add(db_user)
-
-        db_message.is_sent = True
-        db_user.last_send_date = datetime.now()
-
-        session.commit()
-
-    await message.edit_text("The message have been sent")
-    await callback_query.answer()
-
-
-async def cancel(
-    update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,
-) -> None:
-    chat: telegram.Chat | None = update.effective_chat
-
-    if chat is None:
-        return
-
-    user: telegram.User | None = update.effective_user
-
-    if user is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    with compiled_session() as session:
-        db_user: libs.User | None = libs.DBUserManipulator(
-            session, user_id=user.id
-        ).get()
-
-    if isinstance(db_user, libs.User):
-        with compiled_session() as session:
-            session.add(db_user)
-            is_user_authorizing: bool = libs.DBUserManipulator(
-                session, db_user=db_user
-            ).get_authorizing_status()
-
-        if is_user_authorizing:
-            with compiled_session() as session:
-                session.add(db_user)
-                session.delete(db_user)
-                session.commit()
-
-            await chat.send_message("An authorizing have been canceled")
-
-            return
-
-    callback_query: telegram.CallbackQuery | None = update.callback_query
-
-    if callback_query is not None:
-        message: telegram.Message | None = update.effective_message
-
-        if message is None:
-            await chat.send_message("An unknown error is occured")
-            return
-
-        callback_data: str | None = callback_query.data
-
-        if callback_data is None:
-            await chat.send_message("An unknown error is occured")
-            return
-
-        # A message ID will be always a third item after the split
-        assigned_message_id = int(callback_data.split(",")[2])
-
-        with compiled_session() as session:
-            db_message: libs.Message | None = libs.DBMessageManipulator(
-                session,
-                assigned_message_id,
-            ).get()
-
-        if db_message is None:
-            await chat.send_message("An unknown error is occured")
-            return
-
-        if db_message.is_sent:
-            await message.edit_text("A message was already sent")
-            await callback_query.answer()
-            return
-
-        with compiled_session() as session:
-            session.delete(db_message)
-            session.commit()
-
-        await message.edit_text("The message send have been canceled")
-        await callback_query.answer()
-
-        return
-
-    await chat.send_message("Nothing to cancel")
-
-
-async def notify_about_unknown_command(
-    update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,
-) -> None:
-    chat: telegram.Chat | None = update.effective_chat
-
-    if chat is None:
-        return
-
-    await chat.send_message("An unknown command")
-
-
-# TODO realize a "Delete a token" button
-# TODO realize a "List tokens" button
-async def show_admin_panel(
-    update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE
-) -> None:
-    chat: telegram.Chat | None = update.effective_chat
-    user: telegram.User | None = update.effective_user
-
-    if chat is None:
-        return
-
-    if user is None:
-        await chat.send_message("You're not owner of the bot")
-        return
-
-    with compiled_session() as session:
-        db_user_manipulator: libs.DBUserManipulator = libs.DBUserManipulator(
-            session, user_id=user.id
-        )
-        db_user_manipulator.get()
-        is_user_owner: bool = libs.UserOwnershipProver(
-            db_user_manipulator
-        ).prove()
-
-    if not is_user_owner:
-        await notify_about_unknown_command(update, ctx)
-        return
-
-    reply_markup: telegram.InlineKeyboardMarkup = (
-        telegram.InlineKeyboardMarkup(
-            (
-                (
-                    telegram.InlineKeyboardButton(
-                        "Generate a token", callback_data="generate_token"
-                    ),
-                ),
-            )
-        )
-    )
-    await chat.send_message(
-        "What do you want to do?", reply_markup=reply_markup
-    )
-
-
-async def generate_token(
-    update: telegram.Update,
-    ctx: ContextTypes.DEFAULT_TYPE,
-) -> None:
-    chat: telegram.Chat | None = update.effective_chat
-    user: telegram.User | None = update.effective_user
-    callback_query: telegram.CallbackQuery | None = update.callback_query
-
-    if chat is None:
-        return
-
-    if user is None or callback_query is None:
-        await chat.send_message("An unknown error is occured")
-        return
-
-    with compiled_session() as session:
-        db_user_manipulator: libs.DBUserManipulator = libs.DBUserManipulator(
-            session, user_id=user.id
-        )
-        db_user_manipulator.get()
-        is_user_owner: bool = libs.UserOwnershipProver(
-            db_user_manipulator
-        ).prove()
-
-    if not is_user_owner:
-        await chat.send_message("You're not owner of the bot")
-        return
-
-    hex_token: libs.Token = libs.HexTokenCreator().create()
-
-    with compiled_session() as session:
-        new_valid_token: libs.ValidToken = libs.DBValidTokenManipulator(
-            session, hex_token.get()
-        ).create()
-        session.add(new_valid_token)
-        session.commit()
-
-    if chat.type != ChatType.PRIVATE:
-        await chat.send_message("Sent a new token to DM")
-
-    await user.send_message(
-        f"Here's a new token:\n`{hex_token.get()}`",
-        parse_mode=ParseMode.MARKDOWN_V2,
-    )
-
-    await callback_query.answer()
+helpers = Helpers(
+    settings.gmail_smtp_login,
+    settings.gmail_smtp_password,
+    settings.email_from_addr,
+    settings.email_to_addr,
+    compiled_session,
+)
+handlers = Handlers(compiled_session, helpers)
 
 
 async def post_init(_) -> None:
-    print("Started")
+    logger.info("Started")
 
 
 # Creating an app and adding handlers
-app = ApplicationBuilder().token(TELEGRAM_TOKEN).post_init(post_init).build()
+app = (
+    ApplicationBuilder()
+    .token(settings.telegram_token)
+    .post_init(post_init)
+    .build()
+)
 
-start_command_handler = CommandHandler("start", start)
-admin_command_handler = CommandHandler("admin", show_admin_panel)
-cancel_command_handler = CommandHandler("cancel", cancel)
+start_command_handler = CommandHandler(Commands.START, handlers.start)
+admin_command_handler = CommandHandler(
+    Commands.ADMIN, handlers.show_admin_panel
+)
+cancel_command_handler = CommandHandler(Commands.CANCEL, handlers.cancel)
 unknown_command_handler = MessageHandler(
-    filters.COMMAND, notify_about_unknown_command
+    filters.COMMAND, handlers.notify_about_unknown_command
 )
 token_generation_request_handler = CallbackQueryHandler(
-    generate_token, re.compile(r"^generate_token$")
+    handlers.generate_token, re.compile(r"^generate_token$")
 )
 send_message_handler = CallbackQueryHandler(
-    send, re.compile(r"^message_confirmation,true,[0-9]{0,19}$")
+    handlers.send, re.compile(r"^message_confirmation,true,[0-9]{0,19}$")
 )
 cancel_message_handler = CallbackQueryHandler(
-    cancel, re.compile(r"^message_confirmation,false,[0-9]{0,19}$")
+    handlers.cancel, re.compile(r"^message_confirmation,false,[0-9]{0,19}$")
 )
-message_handler = MessageHandler(filters.TEXT, handle_message)
+message_handler = MessageHandler(filters.TEXT, handlers.handle_message)
 
 app.add_handler(start_command_handler)
 app.add_handler(admin_command_handler)
