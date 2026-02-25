@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import telegram
@@ -14,10 +15,11 @@ from .smtp_creators.gmail_smtp_creator import GmailSMTPCreator
 from .tokens import HexToken
 
 if TYPE_CHECKING:
-    from datetime import datetime, timedelta
     from typing import Self
 
     from sqlalchemy.orm import Session, sessionmaker
+
+    from .types import CooldownCheckResult
 
 
 class Helpers:
@@ -122,13 +124,13 @@ class Helpers:
     async def check_cooldown(
         self: Self,
         db_user: database_tables.User,
-    ) -> tuple[bool, timedelta]:
+    ) -> CooldownCheckResult:
         with self.__compiled_session() as session:
             session.add(db_user)
             last_send_date: datetime | None = db_user.last_send_date
 
         if last_send_date is None:
-            return (True, timedelta())
+            return CooldownCheckResult(True, timedelta())
 
         cooldown: timedelta = timedelta(seconds=30)
 
@@ -138,9 +140,9 @@ class Helpers:
         ).is_pass()
 
         if is_cooldown_pass:
-            return (True, timedelta())
+            return CooldownCheckResult(True, timedelta())
 
         diff_between_dates: timedelta = datetime.now() - last_send_date
         remaining_cooldown: timedelta = cooldown - diff_between_dates
 
-        return (False, remaining_cooldown)
+        return CooldownCheckResult(False, remaining_cooldown)

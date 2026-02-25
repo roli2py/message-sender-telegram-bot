@@ -26,6 +26,7 @@ class Answers:
     MESSAGE_ALREADY_WAS_SENT = "A message was already sent"
     NOTHING_TO_CANCEL = "Nothing to cancel"
     UNKNOWN_COMMAND = "An unknown command"
-    YOURE_NOT_OWNER = "You're not owner of the bot"
+    NOT_OWNER_OF_BOT = "You're not owner of the bot"
     WHAT_DO_YOU_WANT = "What do you want to do?"
     SENT_TOKEN_TO_DM = "Sent a new token to DM"
+    NOT_SENDER_OF_MESSAGE = "You're not a sender of this message"
