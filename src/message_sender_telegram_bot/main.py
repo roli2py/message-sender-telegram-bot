@@ -401,6 +401,11 @@ async def send(
         await chat.send_message("An unknown error is occured")
         return
 
+    if db_message.sender_id != db_user.id_:
+        await chat.send_message("You're not a sender of the message")
+        await callback_query.answer()
+        return
+
     if db_message.is_sent:
         await message.edit_text("A message was already sent")
         await callback_query.answer()
@@ -484,6 +489,11 @@ async def cancel(
 
         if db_message is None:
             await chat.send_message("An unknown error is occured")
+            return
+
+        if db_user is None or db_message.sender_id != db_user.id_:
+            await chat.send_message("You're not a sender of the message")
+            await callback_query.answer()
             return
 
         if db_message.is_sent:
