@@ -6,8 +6,8 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
+from ...interfaces import AbstractDBUserManipulator
 from ..database_tables import User, ValidToken
-from .abstract_db_user_manipulator import AbstractDBUserManipulator
 
 if TYPE_CHECKING:
     from logging import Logger

@@ -4,7 +4,8 @@ from logging import getLogger
 from smtplib import SMTP_SSL, SMTPException
 from typing import TYPE_CHECKING, override
 
-from .smtp_creator import SMTPCreator
+from ..consts import GmailSMTPServer
+from ..interfaces import SMTPCreator
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -21,10 +22,6 @@ class GmailSMTPCreator(SMTPCreator):
     :param SMTPCreator: A SMTP creator interface.
     :type SMTPCreator: class
     """
-
-    # TODO move to the constants
-    __host: str = "smtp.gmail.com"
-    __port: int = 465
 
     def __init__(self: Self, login: str, password: str) -> None:
         """
@@ -74,7 +71,10 @@ class GmailSMTPCreator(SMTPCreator):
         logger.debug("Starting a creation of a SMTP instance...")
 
         logger.debug("Creating a SMTP instance...")
-        self.__smtp: SMTP_SSL = SMTP_SSL(host=self.__host, port=self.__port)
+        self.__smtp: SMTP_SSL = SMTP_SSL(
+            host=GmailSMTPServer.HOST,
+            port=GmailSMTPServer.PORT,
+        )
         logger.debug("Created")
 
         logger.debug("Logging in to the gmail SMTP server...")

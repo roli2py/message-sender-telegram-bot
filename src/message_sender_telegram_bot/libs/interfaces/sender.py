@@ -8,27 +8,25 @@ if TYPE_CHECKING:
     from logging import Logger
     from typing import Self
 
-    from ..tokens import Token
-
 logger: Logger = getLogger(__name__)
 
 
-class TokenCreator(metaclass=ABCMeta):
-    """A token creator interface."""
+class Sender(metaclass=ABCMeta):
+    """A sender interface."""
 
     @abstractmethod
-    def create(self: Self) -> Token:
+    def send(self: Self, data: str) -> None:
         """
-        Creates a token.
+        Sends a data.
 
+        :param data: Data to send.
+        :type data: str
         :raises NotImplementedError: Must to be implemented.
-        :return: A token.
-        :rtype: Token
         """
         logger.critical(
             (
-                f"A `%s` method of the `%s` interface is invoked. Raising a "
-                f"`NotImplementedError` exception..."
+                "A `%s` method of the `%s` interface is invoked. Raising a "
+                "`NotImplementedError` exception..."
             ),
             __name__,
             self.__class__.__name__,
@@ -36,7 +34,7 @@ class TokenCreator(metaclass=ABCMeta):
         )
         raise NotImplementedError(
             (
-                f"A `{__name__}` method of the `{self.__class__.__name__}` "
-                f"must be implemented"
+                f"The `{__name__}` method of the `{self.__class__.__name__}` "
+                f"interface must be implemented"
             )
         )

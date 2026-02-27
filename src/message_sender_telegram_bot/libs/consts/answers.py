@@ -15,7 +15,7 @@ class Answers:
     AUTHORIZATION_CANCELED = "An authorization have been canceled"
     ALREADY_AUTHORIZED = "You're already authorized"
     SEND_MESSAGE_QUESTION = "Send a message?"
-    UNKNOWN_ERROR_OCCURED = "An unknown error occurs"
+    UNKNOWN_ERROR_OCCURS = "An unknown error occurs"
     ENTER_TOKEN = "Enter the token"
     TOKEN_IS_EXPIRED = "Your token is expired. Please, enter a new token"
     MESSAGE_DOESNT_HAVE_TEXT = (

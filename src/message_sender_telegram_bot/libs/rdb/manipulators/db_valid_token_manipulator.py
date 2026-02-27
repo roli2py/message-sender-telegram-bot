@@ -6,9 +6,8 @@ from uuid import uuid4
 
 from sqlalchemy import select
 
-from .database_tables import ValidToken
-from .db_item_creator import DBItemCreator
-from .db_item_getter import DBItemGetter
+from ...interfaces import DBItemCreator, DBItemGetter
+from ..database_tables import ValidToken
 
 if TYPE_CHECKING:
     from logging import Logger

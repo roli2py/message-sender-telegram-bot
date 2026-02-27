@@ -6,28 +6,29 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from logging import Logger
-    from smtplib import SMTP
     from typing import Self
+
+    from ..rdb.database_tables import Base
 
 logger: Logger = getLogger(__name__)
 
 
-class SMTPCreator(metaclass=ABCMeta):
-    """A SMTP creator interface."""
+class DBItemCreator(metaclass=ABCMeta):
+    """A DB item creator interface."""
 
     @abstractmethod
-    def create(self: Self) -> SMTP:
+    def create(self: Self) -> Base:
         """
-        Creates an SMTP instance.
+        Creates a new DB item.
 
-        :return: A SMTP instance.
-        :rtype: SMTP
-        :raises NotImplementedError: Must to be implemented.
+        :return: A new DB item.
+        :rtype: Base
+        :raises NotImplementedError: Must be implemented.
         """
         logger.critical(
             (
-                f"A `%s` method of the `%s` interface is invoked. Raising a "
-                f"`NotImplementedError` exception..."
+                "A `%s` method of the `%s` interface is invoked. Raising a "
+                "`NotImplementedError` exception..."
             ),
             __name__,
             self.__class__.__name__,

@@ -8,27 +8,25 @@ if TYPE_CHECKING:
     from logging import Logger
     from typing import Self
 
-    from .database_tables import Base
-
 logger: Logger = getLogger(__name__)
 
 
-class DBItemCreator(metaclass=ABCMeta):
-    """A DB item creator interface."""
+class CooldownChecker(metaclass=ABCMeta):
+    """A cooldown checker interface."""
 
     @abstractmethod
-    def create(self: Self) -> Base:
+    def is_pass(self: Self) -> bool:
         """
-        Creates a new DB item.
+        Checks a pass of the cooldown.
 
-        :return: A new DB item.
-        :rtype: Base
+        :return: A pass status of a cooldown.
+        :rtype: bool
         :raises NotImplementedError: Must be implemented.
         """
         logger.critical(
             (
-                f"A `%s` method of the `%s` interface is invoked. Raising a "
-                f"`NotImplementedError` exception..."
+                "A `%s` method of the `%s` interface is invoked. Raising a "
+                "`NotImplementedError` exception..."
             ),
             __name__,
             self.__class__.__name__,

@@ -5,14 +5,12 @@ from typing import TYPE_CHECKING
 
 import telegram
 
-from . import database_tables
 from .consts import Answers, ButtonTexts
 from .cooldown_checkers import MessageSendCooldownChecker
-from .db_user_manipulators import DBUserManipulator
-from .db_valid_token_manipulator import DBValidTokenManipulator
+from .rdb import DBUserManipulator, DBValidTokenManipulator, database_tables
 from .senders.email_sender import EmailSender
 from .smtp_creators.gmail_smtp_creator import GmailSMTPCreator
-from .tokens import HexToken
+from .types import Token
 
 if TYPE_CHECKING:
     from typing import Self
@@ -46,7 +44,7 @@ class Helpers:
         # Assuming, that a user invoked a `start` command and this
         # message contains an authorization token
         try:
-            hex_token: HexToken = HexToken(message_text)
+            hex_token: Token = Token(message_text)
         # When a hex token is wrong, the constructor will throw a
         # `ValueError` exception
         except ValueError:
@@ -58,7 +56,7 @@ class Helpers:
             valid_token: database_tables.ValidToken | None = (
                 DBValidTokenManipulator(
                     session,
-                    hex_token.get(),
+                    hex_token,
                 ).get()
             )
 
@@ -146,3 +144,15 @@ class Helpers:
         remaining_cooldown: timedelta = cooldown - diff_between_dates
 
         return CooldownCheckResult(False, remaining_cooldown)
+
+    async def is_user_owner(self: Self, user_id: int) -> bool:
+        with self.__compiled_session() as session:
+            db_user_manipulator: DBUserManipulator = DBUserManipulator(
+                session, user_id=user_id
+            )
+            # A `get` method adding a found user to the instance and,
+            # therefore, the program aren't assigning a variable
+            db_user_manipulator.get()
+            is_user_owner: bool = db_user_manipulator.get_owner_status()
+
+        return is_user_owner

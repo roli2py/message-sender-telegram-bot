@@ -4,14 +4,14 @@ from abc import ABCMeta, abstractmethod
 from logging import getLogger
 from typing import TYPE_CHECKING, override
 
-from ..db_item_creator import DBItemCreator
-from ..db_item_getter import DBItemGetter
+from .db_item_creator import DBItemCreator
+from .db_item_getter import DBItemGetter
 
 if TYPE_CHECKING:
     from logging import Logger
     from typing import Self
 
-    from ..database_tables import User, ValidToken
+    from ..rdb.database_tables import User, ValidToken
 
 logger: Logger = getLogger(__name__)
 

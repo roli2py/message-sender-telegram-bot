@@ -6,27 +6,28 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from logging import Logger
+    from smtplib import SMTP
     from typing import Self
 
 logger: Logger = getLogger(__name__)
 
 
-class Authorization(metaclass=ABCMeta):
-    """An autorization interface."""
+class SMTPCreator(metaclass=ABCMeta):
+    """A SMTP creator interface."""
 
     @abstractmethod
-    def authorize(self: Self) -> bool:
+    def create(self: Self) -> SMTP:
         """
-        Initializes an authorization.
+        Creates an SMTP instance.
 
-        :return: A success of the authorization.
-        :rtype: bool
-        :raises NotImplementedError: Must be implemented.
+        :return: A SMTP instance.
+        :rtype: SMTP
+        :raises NotImplementedError: Must to be implemented.
         """
         logger.critical(
             (
-                f"A `%s` method of the `%s` interface is invoked. Raising a "
-                f"`NotImplementedError` exception..."
+                "A `%s` method of the `%s` interface is invoked. Raising a "
+                "`NotImplementedError` exception..."
             ),
             __name__,
             self.__class__.__name__,

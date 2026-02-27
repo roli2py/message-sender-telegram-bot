@@ -4,9 +4,11 @@ from unittest.mock import patch
 from pytest import fixture, raises
 
 from message_sender_telegram_bot.libs import (
-    AbstractDBUserManipulator,
     User,
     ValidToken,
+)
+from message_sender_telegram_bot.libs.interfaces import (
+    AbstractDBUserManipulator,
 )
 
 

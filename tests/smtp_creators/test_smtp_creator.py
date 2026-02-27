@@ -3,7 +3,7 @@ from typing import Self, override
 
 from pytest import fixture, raises
 
-from message_sender_telegram_bot.libs import SMTPCreator
+from message_sender_telegram_bot.libs.interfaces import SMTPCreator
 
 
 @fixture

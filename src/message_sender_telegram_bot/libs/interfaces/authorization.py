@@ -4,8 +4,6 @@ from abc import ABCMeta, abstractmethod
 from logging import getLogger
 from typing import TYPE_CHECKING
 
-from .database_tables import Base
-
 if TYPE_CHECKING:
     from logging import Logger
     from typing import Self
@@ -13,22 +11,22 @@ if TYPE_CHECKING:
 logger: Logger = getLogger(__name__)
 
 
-class DBItemGetter(metaclass=ABCMeta):
-    """A DB item getter interface."""
+class Authorization(metaclass=ABCMeta):
+    """An autorization interface."""
 
     @abstractmethod
-    def get(self: Self) -> Base | None:
+    def authorize(self: Self) -> bool:
         """
-        Gets a DB item.
+        Initializes an authorization.
 
-        :return: A DB item or None, if the DB item is not found.
-        :rtype: Base | None
+        :return: A success of the authorization.
+        :rtype: bool
         :raises NotImplementedError: Must be implemented.
         """
         logger.critical(
             (
-                f"A `%s` method of the `%s` interface is invoked. Raising a "
-                f"`NotImplementedError` exception..."
+                "A `%s` method of the `%s` interface is invoked. Raising a "
+                "`NotImplementedError` exception..."
             ),
             __name__,
             self.__class__.__name__,

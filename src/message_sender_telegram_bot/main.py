@@ -69,20 +69,25 @@ app = (
 
 start_command_handler = CommandHandler(Commands.START, handlers.start)
 admin_command_handler = CommandHandler(
-    Commands.ADMIN, handlers.show_admin_panel
+    Commands.ADMIN,
+    handlers.show_admin_panel,
 )
 cancel_command_handler = CommandHandler(Commands.CANCEL, handlers.cancel)
 unknown_command_handler = MessageHandler(
-    filters.COMMAND, handlers.notify_about_unknown_command
+    filters.COMMAND,
+    handlers.notify_about_unknown_command,
 )
 token_generation_request_handler = CallbackQueryHandler(
-    handlers.generate_token, re.compile(r"^generate_token$")
+    handlers.generate_token,
+    re.compile(r"^generate_token$"),
 )
 send_message_handler = CallbackQueryHandler(
-    handlers.send, re.compile(r"^message_confirmation,true,[0-9]{0,19}$")
+    handlers.send,
+    re.compile(r"^message_confirmation,true,[0-9]{0,19}$"),
 )
 cancel_message_handler = CallbackQueryHandler(
-    handlers.cancel, re.compile(r"^message_confirmation,false,[0-9]{0,19}$")
+    handlers.cancel,
+    re.compile(r"^message_confirmation,false,[0-9]{0,19}$"),
 )
 message_handler = MessageHandler(filters.TEXT, handlers.handle_message)
 

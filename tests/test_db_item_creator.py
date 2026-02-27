@@ -2,8 +2,8 @@ from typing import Self, override
 
 from pytest import fixture, raises
 
-from message_sender_telegram_bot.libs import DBItemCreator
-from message_sender_telegram_bot.libs.database_tables import Base
+from message_sender_telegram_bot.libs.interfaces import DBItemCreator
+from message_sender_telegram_bot.libs.rdb.database_tables import Base
 
 
 @fixture

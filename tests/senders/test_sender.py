@@ -2,7 +2,7 @@ from typing import Self, override
 
 from pytest import fixture, raises
 
-from message_sender_telegram_bot.libs import Sender
+from message_sender_telegram_bot.libs.interfaces import Sender
 
 
 @fixture

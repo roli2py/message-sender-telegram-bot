@@ -3,8 +3,8 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING, override
 
-from ..tokens import Token
-from .authorization import Authorization
+from ..interfaces.authorization import Authorization
+from ..types import Token
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -27,7 +27,7 @@ class TokenAuthorization(Authorization):
         """
         Creates a token authorization.
         """
-        logger.debug(f"Initializing `%s`...", self.__class__.__name__)
+        logger.debug("Initializing `%s`...", self.__class__.__name__)
 
         logger.debug(
             "Setting the arguments to the corresponding instance attributes..."

@@ -102,14 +102,14 @@ def db_user_manipulator_with_a_db_user(
 
 @patch(
     (
-        "message_sender_telegram_bot.libs.db_user_manipulators."
+        "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.select"
     ),
     return_value=select_instance_mock,
 )
 @patch(
     (
-        "message_sender_telegram_bot.libs.db_user_manipulators."
+        "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
     spec=User,
@@ -129,7 +129,7 @@ def test_a_get_method_of_db_user_manipulator_with_a_user_id(
 
 @patch(
     (
-        "message_sender_telegram_bot.libs.db_user_manipulators."
+        "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
     spec=User,
@@ -144,7 +144,7 @@ def test_a_get_method_of_db_user_manipulator_with_a_db_user(
 
 @patch(
     (
-        "message_sender_telegram_bot.libs.db_user_manipulators."
+        "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
     spec=User,
@@ -160,7 +160,7 @@ def test_a_create_method_of_db_user_manipulator_with_a_user_id(
 
 @patch(
     (
-        "message_sender_telegram_bot.libs.db_user_manipulators."
+        "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
     spec=User,

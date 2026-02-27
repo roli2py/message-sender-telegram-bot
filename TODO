@@ -1,0 +1,2 @@
+- Rename `ValidToken` to `Token`
+- Make a DB migration

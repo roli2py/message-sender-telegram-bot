@@ -55,7 +55,7 @@ def db_message_manipulator_with_req_params(
 
 
 @fixture
-@patch("message_sender_telegram_bot.libs.database_tables.User", spec=User)
+@patch("message_sender_telegram_bot.libs.User", spec=User)
 @patch(
     "sqlalchemy.orm.Session",
     spec=Session,
@@ -75,7 +75,7 @@ def db_message_manipulator_with_req_params_and_sender(
 
 
 @fixture
-@patch("message_sender_telegram_bot.libs.database_tables.User", spec=User)
+@patch("message_sender_telegram_bot.libs.User", spec=User)
 @patch(
     "sqlalchemy.orm.Session",
     spec=Session,
@@ -97,11 +97,17 @@ def db_message_manipulator_with_all_params(
 
 
 @patch(
-    "message_sender_telegram_bot.libs.db_message_manipulator.select",
+    (
+        "message_sender_telegram_bot.libs.rdb.manipulators."
+        "db_message_manipulator.select"
+    ),
     return_value=select_instance_mock,
 )
 @patch(
-    "message_sender_telegram_bot.libs.db_message_manipulator.Message",
+    (
+        "message_sender_telegram_bot.libs.rdb.manipulators."
+        "db_message_manipulator.Message"
+    ),
     spec=Message,
 )
 def test_get_method_db_message_manipulator_with_req_params(
@@ -132,7 +138,10 @@ def test_create_method_db_message_manipulator_with_req_params_and_sender(
 
 
 @patch(
-    "message_sender_telegram_bot.libs.db_message_manipulator.Message",
+    (
+        "message_sender_telegram_bot.libs.rdb.manipulators."
+        "db_message_manipulator.Message"
+    ),
     spec=Message,
 )
 def test_create_method_db_message_manipulator_with_all_params(

@@ -1,4 +1,5 @@
 from smtplib import SMTP
+from typing import Literal
 from unittest.mock import patch
 
 from pytest import fixture
@@ -28,7 +29,7 @@ def test_a_choose_of_an_anonymous_sender_name_in_the_contructor(
     to_addr: str,
 ) -> None:
     email_sender: EmailSender = EmailSender(smtp, from_addr, to_addr)
-    sender_name: str = email_sender.get_sender_name()
+    sender_name: str = email_sender.sender_name
 
     assert isinstance(sender_name, str)
     assert sender_name == "Anonymous"
@@ -44,7 +45,7 @@ def test_a_choose_of_an_provided_sender_name_in_the_contructor(
     email_sender: EmailSender = EmailSender(
         smtp, from_addr, to_addr, sender_name=provided_sender_name
     )
-    sender_name: str = email_sender.get_sender_name()
+    sender_name: str = email_sender.sender_name
 
     assert isinstance(sender_name, str)
     assert sender_name == provided_sender_name
@@ -60,14 +61,14 @@ def email_sender(smtp: SMTP) -> EmailSender:
     )
 
 
-def test_a_set_sender_name_method_of_the_email_sender(
+def test_set_of_sender_name_of_the_email_sender(
     email_sender: EmailSender,
 ) -> None:
-    previous_receiver_sender_name: str = email_sender.get_sender_name()
+    previous_receiver_sender_name: str = email_sender.sender_name
     new_sender_name: str = "Mike"
 
-    email_sender.set_sender_name(new_sender_name)
-    new_received_sender_name: str = email_sender.get_sender_name()
+    email_sender.sender_name: Literal["Mike"] = new_sender_name
+    new_received_sender_name: str = email_sender.sender_name
 
     assert previous_receiver_sender_name != new_received_sender_name
     assert new_received_sender_name == new_sender_name

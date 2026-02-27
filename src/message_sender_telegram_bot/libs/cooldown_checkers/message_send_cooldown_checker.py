@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from logging import getLogger
 from typing import TYPE_CHECKING, overload, override
 
-from .cooldown_checker import CooldownChecker
+from ..interfaces import CooldownChecker
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -62,8 +62,8 @@ class MessageSendCooldownChecker(CooldownChecker):
         if cooldown is None and pass_date is None:
             logger.critical(
                 (
-                    f"The `cooldown` and `pass_date` arguments is absent. "
-                    f"Raising a `ValueError` exception..."
+                    "The `cooldown` and `pass_date` arguments is absent. "
+                    "Raising a `ValueError` exception..."
                 ),
                 exc_info=True,
             )
@@ -71,16 +71,16 @@ class MessageSendCooldownChecker(CooldownChecker):
         elif cooldown is not None and pass_date is not None:
             logger.critical(
                 (
-                    f"The `cooldown` and `pass_date` arguments is present. "
-                    f"Raising a `ValueError` exception..."
+                    "The `cooldown` and `pass_date` arguments is present. "
+                    "Raising a `ValueError` exception..."
                 ),
                 exc_info=True,
             )
             raise ValueError("Only a cooldown or a pass date must be provided")
         logger.debug(
             (
-                f"Only a `cooldown` or `pass_date` argument is provided. "
-                f"Continuing an initializing..."
+                "Only a `cooldown` or `pass_date` argument is provided. "
+                "Continuing an initializing..."
             )
         )
 
