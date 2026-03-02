@@ -43,35 +43,31 @@ class Helpers:
     ) -> None:
         # Assuming, that a user invoked a `start` command and this
         # message contains an authorization token
-        try:
-            hex_token: Token = Token(message_text)
-        # When a hex token is wrong, the constructor will throw a
-        # `ValueError` exception
-        except ValueError:
-            await chat.send_message(Answers.NOT_COMPITABLE_SYMBOLS_IN_TOKEN)
-            return
+        token: Token = Token(message_text)
 
         with self.__compiled_session() as session:
             session.add(db_user)
             valid_token: database_tables.ValidToken | None = (
                 DBValidTokenManipulator(
                     session,
-                    hex_token,
+                    token,
                 ).get()
             )
 
         # If a DB valid token with a user-provided token is not exist,
         # then the token is expired or invalid
-        if not isinstance(valid_token, database_tables.ValidToken):
+        if valid_token is None:
             await chat.send_message(Answers.TOKEN_IS_NOT_VALID)
-            return
+
+            return None
 
         # On this step, the user is pass the challenges, so the user is
         # authorized
         with self.__compiled_session() as session:
             session.add(db_user)
             db_user_manipulator: DBUserManipulator = DBUserManipulator(
-                session, db_user=db_user
+                session,
+                db_user=db_user,
             )
             db_user_manipulator.set_valid_token(valid_token)
             db_user_manipulator.set_authorizing_status(False)
@@ -79,7 +75,9 @@ class Helpers:
 
         await chat.send_message(Answers.AUTHORIZED)
 
-    def send_email(self: Self, name: str, text: str) -> None:
+        return None
+
+    async def send_email(self: Self, name: str, text: str) -> None:
         with GmailSMTPCreator(
             self.__gmail_smtp_login,
             self.__gmail_smtp_password,

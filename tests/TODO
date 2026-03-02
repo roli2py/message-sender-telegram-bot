@@ -1,1 +1,2 @@
-Make unittests for handlers and helpers
+- [ ] Make unittests for handlers and helpers
+- [ ] Rename `spec` attributes to `autospec` and set `True` to them

@@ -293,7 +293,7 @@ class Handlers:
 
             return None
 
-        self.__helpers.send_email(user.name, db_message.text)
+        await self.__helpers.send_email(user.name, db_message.text)
 
         with self.__compiled_session() as session:
             session.add(db_message)
