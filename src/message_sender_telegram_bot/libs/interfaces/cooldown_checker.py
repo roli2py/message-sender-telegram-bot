@@ -15,7 +15,7 @@ class CooldownChecker(metaclass=ABCMeta):
     """A cooldown checker interface."""
 
     @abstractmethod
-    def is_pass(self: Self) -> bool:
+    def is_passed(self: Self) -> bool:
         """
         Checks a pass of the cooldown.
 

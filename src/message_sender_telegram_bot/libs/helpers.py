@@ -10,14 +10,12 @@ from .cooldown_checkers import MessageSendCooldownChecker
 from .rdb import DBUserManipulator, DBValidTokenManipulator, database_tables
 from .senders.email_sender import EmailSender
 from .smtp_creators.gmail_smtp_creator import GmailSMTPCreator
-from .types import Token
+from .types import CooldownCheckResult, Token
 
 if TYPE_CHECKING:
     from typing import Self
 
     from sqlalchemy.orm import Session, sessionmaker
-
-    from .types import CooldownCheckResult
 
 
 class Helpers:
@@ -130,12 +128,12 @@ class Helpers:
 
         cooldown: timedelta = timedelta(seconds=30)
 
-        is_cooldown_pass: bool = MessageSendCooldownChecker(
+        is_cooldown_passed: bool = MessageSendCooldownChecker(
             last_send_date,
             cooldown=cooldown,
-        ).is_pass()
+        ).is_passed()
 
-        if is_cooldown_pass:
+        if is_cooldown_passed:
             return CooldownCheckResult(True, timedelta())
 
         diff_between_dates: timedelta = datetime.now() - last_send_date

@@ -115,7 +115,7 @@ class MessageSendCooldownChecker(CooldownChecker):
         logger.debug("Initialized")
 
     @override
-    def is_pass(self: Self) -> bool:
+    def is_passed(self: Self) -> bool:
         """
         Checks a pass of the cooldown.
 
@@ -126,6 +126,12 @@ class MessageSendCooldownChecker(CooldownChecker):
 
         logger.debug("Comparing a pass date with current time...")
         pass_status: bool = self.__pass_date < datetime.now()
+        print(
+            f"{self.__pass_date = }",
+            f"{datetime.now() = }",
+            f"{pass_status = }",
+            sep=", ",
+        )
         logger.debug("Compared")
 
         return pass_status

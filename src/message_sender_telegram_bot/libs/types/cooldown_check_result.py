@@ -7,5 +7,5 @@ if TYPE_CHECKING:
 
 
 class CooldownCheckResult(NamedTuple):
-    is_cooldown_pass: bool
+    is_cooldown_passed: bool
     remained_time: timedelta
