@@ -83,7 +83,7 @@ def test_an_is_pass_method_with_a_cooldown_in_a_cooldown_period(
     message_send_cooldown_checker_with_cooldown: MessageSendCooldownChecker,
 ) -> None:
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_cooldown.is_pass()
+        message_send_cooldown_checker_with_cooldown.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)
@@ -103,7 +103,7 @@ def test_an_is_pass_method_with_a_pass_date_in_a_cooldown_period(
     message_send_cooldown_checker_with_pass_date: MessageSendCooldownChecker,
 ) -> None:
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_pass_date.is_pass()
+        message_send_cooldown_checker_with_pass_date.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)
@@ -123,7 +123,7 @@ def test_an_is_pass_method_with_a_cooldown_out_of_a_cooldown_period(
     message_send_cooldown_checker_with_cooldown: MessageSendCooldownChecker,
 ) -> None:
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_cooldown.is_pass()
+        message_send_cooldown_checker_with_cooldown.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)
@@ -143,7 +143,7 @@ def test_an_is_pass_method_with_a_pass_date_out_of_a_cooldown_period(
     message_send_cooldown_checker_with_pass_date: MessageSendCooldownChecker,
 ) -> None:
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_pass_date.is_pass()
+        message_send_cooldown_checker_with_pass_date.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)

@@ -17,8 +17,7 @@ from message_sender_telegram_bot.libs import (
 from message_sender_telegram_bot.libs.consts import Answers, ButtonTexts
 
 
-@pytest.fixture(scope="function")
-@patch("sqlalchemy.orm.sessionmaker", autospec=True)
+@pytest.fixture
 def helpers(compiled_session_mock: sessionmaker[Session]) -> Helpers:
     gmail_smtp_login = "GMAIL_SMTP_LOGIN"
     gmail_smtp_password = "GMAIL_SMTP_PASSWORD"
@@ -34,19 +33,19 @@ def helpers(compiled_session_mock: sessionmaker[Session]) -> Helpers:
     )
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 @patch("telegram.Chat", autospec=True)
 def chat_mock(chat_class_mock: type[Chat]) -> Chat:
     chat_id = 194657302
     return chat_class_mock(chat_id, ChatType.PRIVATE)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def message_text() -> str:
     return "Hello, World!"
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 @patch(
     "message_sender_telegram_bot.libs.rdb.database_tables.User",
     autospec=True,
@@ -136,8 +135,8 @@ class TestShowMessageConfirmationPanel:
     @patch("telegram.Chat", autospec=True)
     async def test_send_of_confirmation_panel_with_message(
         self: Self,
-        helpers: Helpers,
         chat_mock: Chat,
+        helpers: Helpers,
     ) -> None:
         message_id = 923840239
         yes_button = InlineKeyboardButton(

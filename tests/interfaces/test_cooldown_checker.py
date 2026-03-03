@@ -9,8 +9,8 @@ from message_sender_telegram_bot.libs.interfaces import CooldownChecker
 def cooldown_checker_wrapper() -> CooldownChecker:
     class CooldownCheckerWrapper(CooldownChecker):
         @override
-        def is_pass(self: Self) -> bool:
-            return super().is_pass()
+        def is_passed(self: Self) -> bool:
+            return super().is_passed()
 
     return CooldownCheckerWrapper()
 
@@ -27,4 +27,4 @@ def test_disallow_of_a_direct_using_of_an_is_pass_method(
     cooldown_checker_wrapper: CooldownChecker,
 ) -> None:
     with raises(NotImplementedError):
-        cooldown_checker_wrapper.is_pass()
+        cooldown_checker_wrapper.is_passed()

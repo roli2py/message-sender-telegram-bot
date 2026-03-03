@@ -13,7 +13,8 @@ from message_sender_telegram_bot.libs.consts import Answers
 @pytest.fixture
 @patch("message_sender_telegram_bot.libs.Helpers", autospec=True)
 def handlers(
-    helpers_mock: Helpers, compiled_session_mock: sessionmaker[Session]
+    helpers_mock: Helpers,
+    compiled_session_mock: sessionmaker[Session],
 ) -> Handlers:
     return Handlers(compiled_session_mock, helpers_mock)
 
