@@ -44,7 +44,7 @@ select_instance_mock: MagicMock = MagicMock(
 )
 
 
-@patch("sqlalchemy.orm.Session", spec=Session)
+@patch("sqlalchemy.orm.Session", autospec=True)
 def test_reject_of_db_user_manipulator_init_without_user_id_and_db_user(
     db_session_mock: Session,
 ) -> None:
@@ -52,8 +52,8 @@ def test_reject_of_db_user_manipulator_init_without_user_id_and_db_user(
         _ = DBUserManipulator(db_session_mock)  # type: ignore
 
 
-@patch("message_sender_telegram_bot.libs.User", spec=User)
-@patch("sqlalchemy.orm.Session", spec=Session)
+@patch("message_sender_telegram_bot.libs.User", autospec=True)
+@patch("sqlalchemy.orm.Session", autospec=True)
 def test_a_reject_of_a_db_user_manipulator_init_with_a_user_id_and_a_db_user(
     db_session_mock: Session,
     db_user_mock: User,
@@ -71,7 +71,7 @@ def test_a_reject_of_a_db_user_manipulator_init_with_a_user_id_and_a_db_user(
 @fixture
 @patch(
     "sqlalchemy.orm.Session",
-    spec=Session,
+    autospec=True,
     execute=db_session_execute_function_mock,
 )
 def db_user_manipulator_with_a_user_id(
@@ -83,7 +83,7 @@ def db_user_manipulator_with_a_user_id(
 @fixture
 @patch(
     "message_sender_telegram_bot.libs.User",
-    spec=User,
+    autospec=True,
     user_id=user_id,
     is_authorizing=True,
     valid_token=MagicMock(spec=ValidToken),
@@ -91,11 +91,12 @@ def db_user_manipulator_with_a_user_id(
 )
 @patch(
     "sqlalchemy.orm.Session",
-    spec=Session,
+    autospec=True,
     execute=db_session_execute_function_mock,
 )
 def db_user_manipulator_with_a_db_user(
-    db_session_mock: Session, db_user_mock: User
+    db_session_mock: Session,
+    db_user_mock: User,
 ) -> DBUserManipulator:
     return DBUserManipulator(db_session_mock, db_user=db_user_mock)
 
@@ -105,6 +106,7 @@ def db_user_manipulator_with_a_db_user(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.select"
     ),
+    autospec=True,
     return_value=select_instance_mock,
 )
 @patch(
@@ -112,7 +114,7 @@ def db_user_manipulator_with_a_db_user(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
-    spec=User,
+    autospec=True,
 )
 def test_a_get_method_of_db_user_manipulator_with_a_user_id(
     db_user_mock: User,
@@ -132,7 +134,7 @@ def test_a_get_method_of_db_user_manipulator_with_a_user_id(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
-    spec=User,
+    autospec=True,
 )
 def test_a_get_method_of_db_user_manipulator_with_a_db_user(
     _,
@@ -147,7 +149,7 @@ def test_a_get_method_of_db_user_manipulator_with_a_db_user(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
-    spec=User,
+    autospec=True,
 )
 def test_a_create_method_of_db_user_manipulator_with_a_user_id(
     _,
@@ -163,7 +165,7 @@ def test_a_create_method_of_db_user_manipulator_with_a_user_id(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_user_manipulator.User"
     ),
-    spec=User,
+    autospec=True,
 )
 def test_a_create_method_of_db_user_manipulator_with_a_db_user(
     _,
@@ -220,7 +222,7 @@ def test_a_set_authorizing_status_method_of_db_user_manipulator_with_a_db_user(
     db_user_manipulator_with_a_db_user.set_authorizing_status(True)
 
 
-@patch("message_sender_telegram_bot.libs.ValidToken", spec=ValidToken)
+@patch("message_sender_telegram_bot.libs.ValidToken", autospec=True)
 def test_a_set_valid_token_method_of_db_user_manipulator_with_a_user_id(
     valid_token_mock: ValidToken,
     db_user_manipulator_with_a_user_id: DBUserManipulator,
@@ -231,7 +233,7 @@ def test_a_set_valid_token_method_of_db_user_manipulator_with_a_user_id(
         )
 
 
-@patch("message_sender_telegram_bot.libs.ValidToken", spec=ValidToken)
+@patch("message_sender_telegram_bot.libs.ValidToken", autospec=True)
 def test_a_set_valid_token_method_of_db_user_manipulator_with_a_db_user(
     valid_token_mock: ValidToken,
     db_user_manipulator_with_a_db_user: DBUserManipulator,

@@ -8,7 +8,7 @@ from message_sender_telegram_bot.libs import EmailSender
 
 
 @fixture
-@patch("smtplib.SMTP")
+@patch("smtplib.SMTP", autospec=True)
 def smtp(smtp_mock: SMTP) -> SMTP:
     return smtp_mock
 

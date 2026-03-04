@@ -43,7 +43,7 @@ select_instance_mock: MagicMock = MagicMock(
 @fixture
 @patch(
     "sqlalchemy.orm.Session",
-    spec=Session,
+    autospec=True,
     execute=db_session_execute_function_mock,
 )
 def db_message_manipulator_with_req_params(
@@ -58,7 +58,7 @@ def db_message_manipulator_with_req_params(
 @patch("message_sender_telegram_bot.libs.User", spec=User)
 @patch(
     "sqlalchemy.orm.Session",
-    spec=Session,
+    autospec=True,
     execute=db_session_execute_function_mock,
 )
 def db_message_manipulator_with_req_params_and_sender(
@@ -78,7 +78,7 @@ def db_message_manipulator_with_req_params_and_sender(
 @patch("message_sender_telegram_bot.libs.User", spec=User)
 @patch(
     "sqlalchemy.orm.Session",
-    spec=Session,
+    autospec=True,
     execute=db_session_execute_function_mock,
 )
 def db_message_manipulator_with_all_params(
@@ -101,6 +101,7 @@ def db_message_manipulator_with_all_params(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_message_manipulator.select"
     ),
+    autospec=True,
     return_value=select_instance_mock,
 )
 @patch(
@@ -142,7 +143,7 @@ def test_create_method_db_message_manipulator_with_req_params_and_sender(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_message_manipulator.Message"
     ),
-    spec=Message,
+    autospec=True,
 )
 def test_create_method_db_message_manipulator_with_all_params(
     db_message_mock: Message,

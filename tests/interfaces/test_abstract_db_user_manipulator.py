@@ -92,7 +92,7 @@ def test_disallow_of_a_direct_using_of_a_set_authorizing_status_method(
         _ = abstract_db_user_manipulator_wrapper.set_authorizing_status(True)
 
 
-@patch("message_sender_telegram_bot.libs.ValidToken")
+@patch("message_sender_telegram_bot.libs.ValidToken", autospec=True)
 def test_disallow_of_a_direct_using_of_a_set_valid_token_method(
     valid_token_mock: ValidToken,
     abstract_db_user_manipulator_wrapper: AbstractDBUserManipulator,

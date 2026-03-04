@@ -1,46 +1,55 @@
+from collections.abc import Generator
 from typing import Self
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pytest_mock import MockerFixture
 from sqlalchemy.orm import Session, sessionmaker
 from telegram import Chat, Update, User
 from telegram.ext import ContextTypes
 
-from message_sender_telegram_bot.libs import Handlers, Helpers
+from message_sender_telegram_bot.libs import Handlers
 from message_sender_telegram_bot.libs.consts import Answers
 
 
 @pytest.fixture
-@patch("message_sender_telegram_bot.libs.Helpers", autospec=True)
 def handlers(
-    helpers_mock: Helpers,
+    mocker: MockerFixture,
     compiled_session_mock: sessionmaker[Session],
 ) -> Handlers:
+    helpers_mock = mocker.patch(
+        "message_sender_telegram_bot.libs.Helpers",
+        autospec=True,
+    )
     return Handlers(compiled_session_mock, helpers_mock)
 
 
-# TODO fix a sharing of the object between tests
 @pytest.fixture
-@patch(
-    "telegram.Update",
-    autospec=True,
-    return_value=MagicMock(
-        effective_chat=MagicMock(
-            spec=Chat,
-            send_message=AsyncMock(),
+def update_obj_mock(mocker: MockerFixture) -> Generator[Update]:
+    update_obj_class_mock = mocker.patch(
+        "telegram.Update",
+        autospec=True,
+        return_value=MagicMock(
+            effective_chat=MagicMock(
+                spec=Chat,
+                send_message=AsyncMock(),
+            ),
+            effective_user=MagicMock(spec=User),
         ),
-        effective_user=MagicMock(spec=User),
-    ),
-)
-def update_obj_mock(update_obj_class_mock: type[Update]) -> Update:
+    )
     update_id = 5192443746
-    return update_obj_class_mock(update_id)
+    update_obj_mock = update_obj_class_mock(update_id)
+    yield update_obj_mock
+    del update_obj_mock
 
 
 @pytest.fixture
 @patch("telegram.ext.ContextTypes", autospec=True)
-def ctx_mock(ctx_class_mock: type[ContextTypes]) -> ContextTypes:
-    return ctx_class_mock()
+def ctx_mock(mocker: MockerFixture) -> Generator[ContextTypes]:
+    ctx_class_mock = mocker.patch("telegram.ext.ContextTypes")
+    ctx_mock = ctx_class_mock()
+    yield ctx_mock
+    del ctx_mock
 
 
 class TestStart:
@@ -52,7 +61,6 @@ class TestStart:
     # - [ ] valid_token is None
     # - [ ] without conditions above eg. user have been passed all challenges
     #       and no bugs have been invoked
-    @pytest.mark.xfail(reason="Mock objects shares their states")
     @pytest.mark.asyncio
     async def test_stop_of_handle_when_chat_is_absent(
         self: Self,
@@ -66,7 +74,6 @@ class TestStart:
 
         update_obj_mock.effective_user.assert_not_called()  # type: ignore[unresolved-attribute]
 
-    @pytest.mark.xfail(reason="Mock objects shares their states")
     @pytest.mark.asyncio
     async def test_stop_of_handle_when_user_is_absent(
         self: Self,

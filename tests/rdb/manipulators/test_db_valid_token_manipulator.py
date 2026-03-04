@@ -42,7 +42,7 @@ select_instance_mock: MagicMock = MagicMock(
 @fixture
 @patch(
     "sqlalchemy.orm.Session",
-    spec=Session,
+    autospec=True,
     execute=db_session_execute_function_mock,
 )
 def db_valid_token_manipulator(
@@ -57,6 +57,7 @@ def db_valid_token_manipulator(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_valid_token_manipulator.select"
     ),
+    autospec=True,
     return_value=select_instance_mock,
 )
 @patch(
@@ -64,7 +65,7 @@ def db_valid_token_manipulator(
         "message_sender_telegram_bot.libs.rdb.manipulators."
         "db_valid_token_manipulator.ValidToken"
     ),
-    spec=ValidToken,
+    autospec=True,
 )
 def test_a_get_method_of_db_valid_token_manipulator(
     db_valid_token_mock: ValidToken,

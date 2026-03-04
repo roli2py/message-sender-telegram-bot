@@ -15,10 +15,7 @@ def cooldown_checker_wrapper() -> CooldownChecker:
     return CooldownCheckerWrapper()
 
 
-# TODO fix a line length
-def test_disallow_of_a_creation_of_an_cooldown_checker_interface_instance() -> (
-    None
-):
+def test_disallow_of_creation_of_cooldown_checker_interface_instance() -> None:
     with raises(TypeError):
         CooldownChecker()
 
