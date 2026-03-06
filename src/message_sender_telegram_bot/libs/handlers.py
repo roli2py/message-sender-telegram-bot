@@ -15,6 +15,7 @@ from .rdb import (
     DBValidTokenManipulator,
     database_tables,
 )
+from .types import Token
 
 if TYPE_CHECKING:
     from typing import Self
@@ -23,7 +24,6 @@ if TYPE_CHECKING:
     from telegram.ext import ContextTypes
 
     from .helpers import Helpers
-    from .types import Token
 
 
 class Handlers:
@@ -115,7 +115,7 @@ class Handlers:
             return None
 
         # If other cases is not invoked, then the user is authorized
-        await chat.send_message(consts.Answers.TOKEN_IS_EXPIRED)
+        await chat.send_message(consts.Answers.AUTHORIZED)
 
         return None
 
@@ -170,11 +170,11 @@ class Handlers:
             return None
 
         (
-            is_cooldown_pass,
+            is_cooldown_passed,
             remaining_time,
         ) = await self.__helpers.check_cooldown(db_user)
 
-        if not is_cooldown_pass:
+        if not is_cooldown_passed:
             await chat.send_message(
                 fstrings.Answers.send_message_after_seconds.format(
                     seconds=remaining_time.seconds
@@ -241,11 +241,11 @@ class Handlers:
             await chat.send_message(consts.Answers.SEND_TOKEN)
 
         (
-            is_cooldown_pass,
+            is_cooldown_passed,
             remaining_time,
         ) = await self.__helpers.check_cooldown(db_user)
 
-        if not is_cooldown_pass:
+        if not is_cooldown_passed:
             await chat.send_message(
                 fstrings.Answers.send_message_after_seconds.format(
                     seconds=remaining_time.seconds
@@ -442,14 +442,14 @@ class Handlers:
         user: telegram.User | None = update.effective_user
 
         if user is None:
-            await chat.send_message(consts.Answers.NOT_OWNER_OF_BOT)
+            await chat.send_message(consts.Answers.UNKNOWN_ERROR_OCCURS)
 
             return None
 
         is_user_owner = await self.__helpers.is_user_owner(user.id)
 
         if not is_user_owner:
-            await self.notify_about_unknown_command(update, ctx)
+            await chat.send_message(consts.Answers.NOT_OWNER_OF_BOT)
 
             return None
 

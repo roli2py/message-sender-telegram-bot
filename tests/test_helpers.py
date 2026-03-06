@@ -147,7 +147,7 @@ class TestShowMessageConfirmationPanel:
             ButtonTexts.NO,
             callback_data=f"message_confirmation,false,{message_id}",
         )
-        reply_markup = InlineKeyboardMarkup([[yes_button, no_button]])
+        reply_markup = InlineKeyboardMarkup(((yes_button, no_button),))
 
         await helpers.show_message_confirmation_panel(chat_mock, message_id)
 

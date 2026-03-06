@@ -108,7 +108,7 @@ class Helpers:
         )
 
         reply_markup: telegram.InlineKeyboardMarkup = (
-            telegram.InlineKeyboardMarkup([[yes_button, no_button]])
+            telegram.InlineKeyboardMarkup(((yes_button, no_button),))
         )
         await chat.send_message(
             Answers.SEND_MESSAGE_QUESTION,

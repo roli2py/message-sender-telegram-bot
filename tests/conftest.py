@@ -1,13 +1,15 @@
-from unittest.mock import patch
-
 import pytest
+from pytest_mock import MockerFixture
 from sqlalchemy.orm import Session, sessionmaker
 
 
 @pytest.fixture
-@patch("sqlalchemy.orm.sessionmaker", autospec=True)
 def compiled_session_mock(
-    sessionmaker_mock: type[sessionmaker],
+    mocker: MockerFixture,
 ) -> sessionmaker[Session]:
+    sessionmaker_mock = mocker.patch(
+        "sqlalchemy.orm.sessionmaker",
+        autospec=True,
+    )
     compiled_session_mock: sessionmaker[Session] = sessionmaker_mock()
     return compiled_session_mock
