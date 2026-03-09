@@ -1,2 +1,2 @@
 - [ ] Rename `ValidToken` to `Token`
-- [ ] Make a DB migration
+- [ ] Make a DB migration after renaming of `ValidToken`

@@ -1,7 +1,9 @@
+from collections.abc import Generator
 from smtplib import SMTP, SMTP_SSL, SMTPAuthenticationError
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-from pytest import fixture, raises
+import pytest
+from pytest_mock import MockerFixture
 
 from message_sender_telegram_bot.libs import GmailSMTPCreator
 
@@ -31,49 +33,57 @@ def login_func_mock(
         )
 
 
-@fixture
+@pytest.fixture
 def gmail_smtp_creator() -> GmailSMTPCreator:
     return GmailSMTPCreator(
         CORRECT_SMTP_TEST_LOGIN, CORRECT_SMTP_TEST_PASSWORD
     )
 
 
-@fixture
+@pytest.fixture
 def gmail_smtp_creator_with_bad_credentials() -> GmailSMTPCreator:
     return GmailSMTPCreator(BAD_SMTP_TEST_LOGIN, BAD_SMTP_TEST_PASSWORD)
 
 
-@patch(
-    (
-        "message_sender_telegram_bot.libs.smtp_creators.gmail_smtp_creator."
-        "SMTP_SSL"
-    ),
-    autospec=True,
-    return_value=MagicMock(
-        spec=SMTP_SSL,
-        login=login_func_mock,
-    ),
-)
-def test_smtp_creation(_, gmail_smtp_creator: GmailSMTPCreator) -> None:
+@pytest.fixture
+def smtp_ssl_mock(mocker: MockerFixture) -> Generator[SMTP_SSL]:
+    smtp_ssl_class_mock = mocker.patch(
+        (
+            "message_sender_telegram_bot.libs.smtp_creators."
+            "gmail_smtp_creator.SMTP_SSL"
+        ),
+        autospec=True,
+        return_value=MagicMock(
+            spec=SMTP_SSL,
+            login=login_func_mock,
+        ),
+    )
+    smtp_ssl_mock: SMTP_SSL = smtp_ssl_class_mock()
+    yield smtp_ssl_mock
+    del smtp_ssl_mock
+
+
+def test_smtp_creation(
+    smtp_ssl_mock: SMTP_SSL,
+    gmail_smtp_creator: GmailSMTPCreator,
+) -> None:
+
     smtp: SMTP = gmail_smtp_creator.create()
 
     assert isinstance(smtp, SMTP)
 
 
-@patch(
-    (
-        "message_sender_telegram_bot.libs.smtp_creators.gmail_smtp_creator."
-        "SMTP_SSL"
-    ),
-    autospec=True,
-    return_value=MagicMock(
-        spec=SMTP_SSL,
-        login=login_func_mock,
-    ),
-)
 def test_smtp_creation_with_bad_credentials(
-    _,
+    smtp_ssl_mock: SMTP_SSL,
     gmail_smtp_creator_with_bad_credentials: GmailSMTPCreator,
 ) -> None:
-    with raises(SMTPAuthenticationError):
+    with pytest.raises(SMTPAuthenticationError):
         _ = gmail_smtp_creator_with_bad_credentials.create()
+
+
+def test_success_work_of_context_manager(
+    smtp_ssl_mock: SMTP_SSL,
+    gmail_smtp_creator: GmailSMTPCreator,
+) -> None:
+    with gmail_smtp_creator as smtp:
+        assert isinstance(smtp, SMTP)

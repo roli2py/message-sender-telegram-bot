@@ -1,0 +1,7 @@
+Finish to implement unittests for handlers
+
+Implement a unittest for a `is_user_owner` helper. Implement a unittest
+for a `GmailSMTPCreator`'s context manager. Fix a context manager exit
+of `GmailSMTPCreator`. Remove articles from the unittests' names.
+Replace `unitmock.mock`'s `patch` to a `mocker` fixture. Fix a further
+handle of `send` when a user is authorizing.

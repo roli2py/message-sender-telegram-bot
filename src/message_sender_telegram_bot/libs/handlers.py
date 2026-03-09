@@ -240,6 +240,8 @@ class Handlers:
         if is_user_authorizing:
             await chat.send_message(consts.Answers.SEND_TOKEN)
 
+            return None
+
         (
             is_cooldown_passed,
             remaining_time,

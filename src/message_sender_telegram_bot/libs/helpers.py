@@ -144,7 +144,8 @@ class Helpers:
     async def is_user_owner(self: Self, user_id: int) -> bool:
         with self.__compiled_session() as session:
             db_user_manipulator: DBUserManipulator = DBUserManipulator(
-                session, user_id=user_id
+                session,
+                user_id=user_id,
             )
             # A `get` method adding a found user to the instance and,
             # therefore, the program aren't assigning a variable

@@ -16,12 +16,12 @@ def smtp_creator_wrapper() -> SMTPCreator:
     return SMTPCreatorWrapper()
 
 
-def test_disallow_of_a_creation_of_a_smtp_creator_interface_instance() -> None:
+def test_disallow_of_creation_of_smtp_creator_interface_instance() -> None:
     with raises(TypeError):
         _ = SMTPCreator()
 
 
-def test_disallow_of_a_direct_using_of_a_create_method(
+def test_disallow_of_direct_using_of_create_method(
     smtp_creator_wrapper: SMTPCreator,
 ) -> None:
     with raises(NotImplementedError):

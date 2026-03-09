@@ -16,14 +16,12 @@ def db_item_getter_wrapper() -> DBItemGetter:
     return DBItemGetterWrapper()
 
 
-def test_disallow_of_a_creation_of_a_db_item_getter_interface_instance() -> (
-    None
-):
+def test_disallow_of_creation_of_db_item_getter_interface_instance() -> None:
     with raises(TypeError):
         _ = DBItemGetter()
 
 
-def test_disallow_of_a_direct_using_of_a_get_method(
+def test_disallow_of_direct_using_of_get_method(
     db_item_getter_wrapper: DBItemGetter,
 ) -> None:
     with raises(NotImplementedError):

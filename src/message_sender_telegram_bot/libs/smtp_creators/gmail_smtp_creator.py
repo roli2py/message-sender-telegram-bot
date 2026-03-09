@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from smtplib import SMTP_SSL, SMTPException
+from smtplib import SMTP_SSL
 from typing import TYPE_CHECKING, override
 
 from ..consts import GmailSMTPServer
@@ -48,17 +48,9 @@ class GmailSMTPCreator(SMTPCreator):
     def __enter__(self: Self) -> SMTP:
         return self.create()
 
-    def __exit__(self: Self, exc_type, exc_val, exc_tb) -> bool:
-        if exc_type is not None or exc_val is not None or exc_tb is not None:
-            return False
-
+    def __exit__(self: Self, exc_type, exc_val, exc_tb) -> None:
         if self.__smtp is not None:
-            try:
-                self.__smtp.quit()
-            except SMTPException:
-                return False
-
-        return True
+            self.__smtp.quit()
 
     @override
     def create(self: Self) -> SMTP:

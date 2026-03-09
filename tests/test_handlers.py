@@ -2,6 +2,7 @@ from collections.abc import Generator
 from datetime import timedelta
 from typing import Self, cast
 from unittest.mock import AsyncMock, MagicMock
+from uuid import UUID
 
 import pytest
 import telegram
@@ -57,6 +58,7 @@ def helpers_mock(
                 ),
                 show_message_confirmation_panel=AsyncMock(),
                 is_user_owner=AsyncMock(return_value=True),
+                send_email=AsyncMock(),
             ),
         ),
     )
@@ -80,13 +82,24 @@ def handlers(
 
 
 @pytest.fixture
-def update_obj_mock(mocker: MockerFixture) -> Generator[Update]:
+def callback_query_data() -> str:
+    # The data will be splitted in a `cancel` handler, so the fixture
+    # must return a string with three items, separated by commas
+    return "ACTION,DESIRE,10294756"  # Third item is ID
+
+
+@pytest.fixture
+def update_obj_mock(
+    mocker: MockerFixture,
+    callback_query_data: str,
+) -> Generator[Update]:
     update_obj_class_mock = mocker.patch(
         "telegram.Update",
         autospec=True,
         return_value=MagicMock(
             callback_query=MagicMock(
                 spec=CallbackQuery,
+                data=callback_query_data,
                 answer=AsyncMock(),
             ),
             effective_chat=MagicMock(
@@ -98,7 +111,10 @@ def update_obj_mock(mocker: MockerFixture) -> Generator[Update]:
                 spec=telegram.User,
                 send_message=AsyncMock(),
             ),
-            effective_message=MagicMock(spec=telegram.Message),
+            effective_message=MagicMock(
+                spec=telegram.Message,
+                edit_text=AsyncMock(),
+            ),
         ),
     )
     update_id = 5192443746
@@ -135,8 +151,14 @@ def message_mock(
 
 
 @pytest.fixture
+def user_uuid() -> UUID:
+    return UUID("23d3ad93-9e1f-4a41-ae66-ea1fe0a430dd")
+
+
+@pytest.fixture
 def db_user_manipulator_mock(
     mocker: MockerFixture,
+    user_uuid: UUID,
 ) -> Generator[DBUserManipulator]:
     db_user_manipulator_class_mock = cast(
         type[DBUserManipulator],
@@ -145,7 +167,10 @@ def db_user_manipulator_mock(
             autospec=True,
             return_value=MagicMock(
                 get=MagicMock(
-                    return_value=MagicMock(spec=database_tables.User),
+                    return_value=MagicMock(
+                        spec=database_tables.User,
+                        id_=user_uuid,
+                    ),
                 ),
                 get_authorizing_status=MagicMock(return_value=False),
                 get_valid_token=MagicMock(
@@ -162,6 +187,7 @@ def db_user_manipulator_mock(
 @pytest.fixture
 def db_message_manipulator_mock(
     mocker: MockerFixture,
+    user_uuid: UUID,
 ) -> Generator[DBMessageManipulator]:
     db_session_mock = MagicMock(spec=Session)
     message_id = 436583812
@@ -173,6 +199,15 @@ def db_message_manipulator_mock(
         mocker.patch(
             "message_sender_telegram_bot.libs.handlers.DBMessageManipulator",
             autospec=True,
+            return_value=MagicMock(
+                get=MagicMock(
+                    return_value=MagicMock(
+                        spec=database_tables.Message,
+                        sender_id=user_uuid,
+                        is_sent=False,
+                    ),
+                ),
+            ),
         ),
     )
     db_message_manipulator_mock = db_message_manipulator_class_mock(
@@ -333,7 +368,7 @@ class TestHandleMessage:
         update_obj_mock: Update,
         ctx_mock: ContextTypes,
     ) -> None:
-        update_obj_mock.effective_message = None  # type: ignore[invalid-assignment]
+        update_obj_mock.effective_user = None  # type: ignore[invalid-assignment]
 
         await handlers.handle_message(update_obj_mock, ctx_mock)
 
@@ -451,34 +486,452 @@ class TestHandleMessage:
 
 
 class TestSend:
-    # What do I need to test?:
-    # - [ ] chat is None
-    # - [ ] user is None or message is None
-    # - [ ] db_user is None
-    # - [ ] is_user_authorizing
-    # - [ ] not is_cooldown_passed
-    # - [ ] callback_query is None
-    # - [ ] callback_data is None
-    # - [ ] db_message is None
-    # - [ ] db_message.sender_id != db_user.id_
-    # - [ ] db_message.is_sent
-    # - [ ] none of the cases above
-    pass
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_chat_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+    ) -> None:
+        update_obj_mock.effective_chat = None  # type: ignore[invalid-assignment]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        # TODO find a way to test that a `chat is None` construction was
+        # invoked
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_user_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+    ) -> None:
+        update_obj_mock.effective_user = None  # type: ignore[invalid-assignment]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.UNKNOWN_ERROR_OCCURS,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_message_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        message_mock: telegram.Message,
+    ) -> None:
+        update_obj_mock.effective_message = None  # type: ignore[invalid-assignment]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.UNKNOWN_ERROR_OCCURS,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_db_user_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+    ) -> None:
+        db_user_manipulator_mock.get.return_value = None  # type: ignore[unresolved-attribute]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.NOT_AUTHORIZED,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_user_is_authorizing(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+    ) -> None:
+        db_user_manipulator_mock.get_authorizing_status.return_value = True  # type: ignore[unresolved-attribute]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.SEND_TOKEN,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_cooldown_is_not_passed(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+    ) -> None:
+        cooldown_check_result = CooldownCheckResult(
+            False,
+            timedelta(seconds=15),
+        )
+        helpers_mock.check_cooldown.return_value = cooldown_check_result  # type: ignore[unresolved-attribute]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            fstrings.Answers.send_message_after_seconds.format(
+                seconds=cooldown_check_result.remained_time.seconds,
+            ),
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_callback_query_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+    ) -> None:
+        update_obj_mock.callback_query = None
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.SEND_TOKEN,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_callback_data_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+    ) -> None:
+        update_obj_mock.callback_query.data = None  # type: ignore[invalid-assignment]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.SEND_TOKEN,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_db_message_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        db_message_manipulator_mock.get.return_value = None  # type: ignore[unresolved-attribute]
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.UNKNOWN_ERROR_OCCURS,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_message_sender_id_not_equals_user_id(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        another_sender_id = UUID("41895d87-92da-42d5-be9a-5a5663f45198")
+        db_message_mock: database_tables.Message = (
+            db_message_manipulator_mock.get.return_value  # type: ignore[unresolved-attribute]
+        )
+        db_message_mock.sender_id: UUID = another_sender_id
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.NOT_SENDER_OF_MESSAGE,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_db_message_is_sent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        db_message_mock: database_tables.Message = (
+            db_message_manipulator_mock.get.return_value  # type: ignore[unresolved-attribute]
+        )
+        db_message_mock.is_sent = True
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_message.edit_text.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.MESSAGE_ALREADY_WAS_SENT,
+        )
+
+    @pytest.mark.asyncio
+    async def test_success_send(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        user: telegram.User | None = update_obj_mock.effective_user
+        assert user is not None
+        db_message_mock: database_tables.Message = (
+            db_message_manipulator_mock.get.return_value  # type: ignore[unresolved-attribute]
+        )
+
+        await handlers.send(update_obj_mock, ctx_mock)
+
+        helpers_mock.send_email.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            user.name,
+            db_message_mock.text,
+        )
+        update_obj_mock.effective_message.edit_text.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.MESSAGE_SENT,
+        )
 
 
 class TestCancel:
     # What do I need to test?:
-    # - [ ] chat is None
-    # - [ ] user is None
-    # - [ ] db_user is not None
-    #     - [ ] is_user_authorizing
-    # - [ ] callback_query is not None
-    #     - [ ] message is None or callback_data is None
-    #     - [ ] db_message is None
-    #     - [ ] db_user is None or db_message.sender_id != db_user.id_
-    #     - [ ] db_message.is_sent
+    # - [x] chat is None
+    # - [x] user is None
+    # - [x] db_user is not None
+    #     - [x] is_user_authorizing
+    # - [x] callback_query is not None
+    #     - [x] message is None or callback_data is None
+    #     - [x] db_message is None
+    #     - [x] db_user is None or db_message.sender_id != db_user.id_
+    #     - [x] db_message.is_sent
     # - [ ] none of the cases above
-    pass
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_chat_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+    ) -> None:
+        update_obj_mock.effective_chat = None  # type: ignore[invalid-assignment]
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        # TODO find a way to test that a `chat is None` construction was
+        # invoked
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_user_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+    ) -> None:
+        update_obj_mock.effective_user = None  # type: ignore[invalid-assignment]
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.UNKNOWN_ERROR_OCCURS,
+        )
+
+    @pytest.mark.asyncio
+    async def test_fall_into_user_related_category_when_db_user_is_not_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+    ) -> None:
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        db_user_manipulator_mock.get_authorizing_status.assert_called_once()  # type: ignore[unresolved-attribute]
+
+    @pytest.mark.asyncio
+    async def test_success_cancel_of_authorization(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+    ) -> None:
+        db_user_manipulator_mock.get_authorizing_status.return_value = True  # type: ignore[unresolved-attribute]
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.AUTHORIZATION_CANCELED,
+        )
+
+    # TODO find a way to check that a handler is fallen in the category
+    # or remove this test
+    # @pytest.mark.asyncio
+    # async def test_fall_into_callback_related_category_when_it_is_not_absent(
+    #     self: Self,
+    #     handlers: Handlers,
+    #     update_obj_mock: Update,
+    #     ctx_mock: ContextTypes,
+    #     db_user_manipulator_mock: DBUserManipulator,
+    # ) -> None:
+    #     await handlers.cancel(update_obj_mock, ctx_mock)
+    #
+    #     update_obj_mock.effective_chat.send_message.assert_called_once_with(
+    #         consts.Answers.NOTHING_TO_CANCEL,
+    #     )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_message_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+    ) -> None:
+        update_obj_mock.effective_message = None  # type: ignore[invalid-assignment]
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.UNKNOWN_ERROR_OCCURS,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_callback_data_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+    ) -> None:
+        update_obj_mock.callback_query.data = None  # type: ignore[invalid-assignment]
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.UNKNOWN_ERROR_OCCURS,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_db_message_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        db_message_manipulator_mock.get.return_value = None  # type: ignore[unresolved-attribute]
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.UNKNOWN_ERROR_OCCURS,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_db_user_is_absent_in_callback_category(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        db_user_manipulator_mock.get.return_value = None  # type: ignore[unresolved-attribute]
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.NOT_SENDER_OF_MESSAGE,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_message_sender_id_not_equals_user_id(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        another_sender_id = UUID("41895d87-92da-42d5-be9a-5a5663f45198")
+        db_message_mock: database_tables.Message = (
+            db_message_manipulator_mock.get.return_value  # type: ignore[unresolved-attribute]
+        )
+        db_message_mock.sender_id: UUID = another_sender_id
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.NOT_SENDER_OF_MESSAGE,
+        )
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_db_message_is_sent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        db_message_mock: database_tables.Message = (
+            db_message_manipulator_mock.get.return_value  # type: ignore[unresolved-attribute]
+        )
+        db_message_mock.is_sent = True
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_message.edit_text.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.MESSAGE_ALREADY_WAS_SENT,
+        )
+
+    @pytest.mark.asyncio
+    async def test_success_cancel_of_message_send(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_message.edit_text.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.MESSAGE_SEND_CANCELED,
+        )
+
+    @pytest.mark.asyncio
+    async def test_end_of_handle_when_none_of_cases_wasnt_invoked(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        db_message_manipulator_mock: DBMessageManipulator,
+    ) -> None:
+        db_user_manipulator_mock.get.return_value = None  # type: ignore[unresolved-attribute]
+        update_obj_mock.callback_query = None
+
+        await handlers.cancel(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.NOTHING_TO_CANCEL,
+        )
 
 
 class TestNotifyAboutUnknownCommand:

@@ -20,7 +20,7 @@ def test_disallow_of_creation_of_cooldown_checker_interface_instance() -> None:
         CooldownChecker()
 
 
-def test_disallow_of_a_direct_using_of_an_is_pass_method(
+def test_disallow_of_direct_using_of_is_pass_method(
     cooldown_checker_wrapper: CooldownChecker,
 ) -> None:
     with raises(NotImplementedError):

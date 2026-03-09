@@ -1,5 +1,0 @@
-- [ ] Remove articles from tests' method names
-- [ ] Replace a standard `patch` decorator to `pytest-mock`'s `mocker` fixture
-- [x] Rename `spec` attributes to `autospec` and set `True` to them
-- [ ] Make unittests for handlers
-- [x] Make unittests for helpers

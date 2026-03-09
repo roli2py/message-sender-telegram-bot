@@ -16,14 +16,12 @@ def db_item_creator_wrapper() -> DBItemCreator:
     return DBItemCreatorWrapper()
 
 
-def test_disallow_of_a_creation_of_a_db_item_creator_interface_instance() -> (
-    None
-):
+def test_disallow_of_creation_of_db_item_creator_interface_instance() -> None:
     with raises(TypeError):
         _ = DBItemCreator()
 
 
-def test_disallow_of_a_direct_using_of_a_create_method(
+def test_disallow_of_direct_using_of_create_method(
     db_item_creator_wrapper: DBItemCreator,
 ) -> None:
     with raises(NotImplementedError):
