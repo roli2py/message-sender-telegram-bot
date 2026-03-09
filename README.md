@@ -59,7 +59,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ### Security
 
-See [`SECURITY.md`](SECURITY.md)
+See [`SECURITY.md`](SECURITY.md).
 
 ### Code of Conduct
 
