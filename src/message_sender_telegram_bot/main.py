@@ -184,7 +184,6 @@ async def authorize(
         session.commit()
 
     await chat.send_message("You're authorized")
-    pass
 
 
 async def show_message_confirmation_panel(
@@ -364,6 +363,7 @@ async def send(
 
     if is_user_authorizing:
         await chat.send_message("Send a token to authorize")
+        return
 
     is_cooldown_pass, remaining_cooldown = await check_cooldown(db_user)
 
