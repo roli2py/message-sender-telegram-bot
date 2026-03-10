@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from ...interfaces import AbstractDBUserManipulator
-from ..database_tables import User, ValidToken
+from ..database_tables import Token, User
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -192,7 +192,7 @@ class DBUserManipulator(AbstractDBUserManipulator):
             user_id=user_id,
             is_authorizing=True,
             token_id=None,
-            valid_token=None,
+            token=None,
             is_owner=False,
             last_send_date=None,
             messages=[],
@@ -239,16 +239,15 @@ class DBUserManipulator(AbstractDBUserManipulator):
         return is_user_authorizing
 
     @override
-    def get_valid_token(self: Self) -> ValidToken | None:
+    def get_token(self: Self) -> Token | None:
         """
-        Gets a DB user's DB valid token. That is, gets a `ValidToken`
-        object.
+        Gets a DB user's DB token. That is, gets a `Token` object.
 
-        :return: A DB user's DB valid token or None, if the DB user's DB
-                 valid token is absent.
+        :return: A DB user's DB token or None, if the DB user's DB token
+                 is absent.
         :rtype: str | None
         """
-        logger.debug("Starting a getting of a DB valid token...")
+        logger.debug("Starting a getting of a DB token...")
         db_user: User | None = self.__db_user
 
         logger.debug("Checking for a presence of a DB user...")
@@ -258,17 +257,14 @@ class DBUserManipulator(AbstractDBUserManipulator):
             )
             raise ValueError("A DB user is absent")
         logger.debug(
-            (
-                "A DB user is present. Continuing the getting of the DB valid "
-                "token..."
-            )
+            "A DB user is present. Continuing the getting of the DB token..."
         )
 
-        logger.debug("Getting a DB valid token...")
-        valid_token: ValidToken | None = db_user.valid_token
+        logger.debug("Getting a DB token...")
+        token: Token | None = db_user.token
         logger.debug("Got")
 
-        return valid_token
+        return token
 
     @override
     def set_authorizing_status(self: Self, is_authorizing: bool) -> None:
@@ -301,16 +297,16 @@ class DBUserManipulator(AbstractDBUserManipulator):
         logger.debug("Set")
 
     @override
-    def set_valid_token(self: Self, valid_token: ValidToken) -> None:
+    def set_token(self: Self, token: Token) -> None:
         """
-        Sets a DB user's DB valid token. That is, sets a `token_id` to
-        a corresponding row in the `valid_token` table. This means, that
-        the user claims the token.
+        Sets a DB user's DB token. That is, sets a `token_id` to a
+        corresponding row in the `token` table. This means, that the
+        user claims the token.
 
-        :param token: A DB valid token to set.
+        :param token: A DB token to set.
         :type token: str
         """
-        logger.debug("Starting a setting of a DB valid token...")
+        logger.debug("Starting a setting of a DB token...")
         db_user: User | None = self.__db_user
 
         logger.debug("Checking for a presence of a DB user...")
@@ -320,24 +316,21 @@ class DBUserManipulator(AbstractDBUserManipulator):
             )
             raise ValueError("A DB user is absent")
         logger.debug(
-            (
-                "A DB user is present. Continuing the setting of the DB valid "
-                "token..."
-            )
+            "A DB user is present. Continuing the setting of the DB token..."
         )
 
-        logger.debug("Setting a DB valid token...")
-        db_user.valid_token = valid_token
+        logger.debug("Setting a DB token...")
+        db_user.token = token
         logger.debug("Set")
 
     @override
-    def clear_valid_token(self: Self) -> None:
+    def clear_token(self: Self) -> None:
         """
-        Clears a DB user's DB valid token. That is, sets a `token_id`
-        column to `None`. This means, that the user loses the claim to
-        the token.
+        Clears a DB user's DB token. That is, sets a `token_id` column
+        to `None`. This means, that the user loses the claim to the
+        token.
         """
-        logger.debug("Starting a clearing of the DB valid token...")
+        logger.debug("Starting a clearing of the DB token...")
         db_user: User | None = self.__db_user
 
         logger.debug("Checking for a presence of a DB user...")
@@ -349,12 +342,12 @@ class DBUserManipulator(AbstractDBUserManipulator):
         logger.debug(
             (
                 "A DB user is present. Continuing the clearing of the DB "
-                "valid token..."
+                "token..."
             )
         )
 
-        logger.debug("Clearing the DB valid token...")
-        db_user.valid_token = None
+        logger.debug("Clearing the DB token...")
+        db_user.token = None
         logger.debug("Cleared")
 
     @override
@@ -365,7 +358,6 @@ class DBUserManipulator(AbstractDBUserManipulator):
 
         :return: A DB user's owner status.
         :rtype: bool
-        :raises NotImplementedError: Must be implemented.
         """
         logger.debug("Starting a getting of an owner status...")
         db_user: User | None = self.__db_user
@@ -378,8 +370,8 @@ class DBUserManipulator(AbstractDBUserManipulator):
             raise ValueError("A DB user is absent")
         logger.debug(
             (
-                "A DB user is present. Continuing the clearing of the DB "
-                "valid token..."
+                "A DB user is present. Continuing the getting of an owner "
+                "status..."
             )
         )
 

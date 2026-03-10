@@ -75,7 +75,7 @@ def db_user_mock(
         user_id,
         is_authorizing=False,
         token_id=None,
-        valid_token=None,
+        token=None,
         is_owner=False,
         # The fixture will assign `last_send_date` later
         last_send_date=None,

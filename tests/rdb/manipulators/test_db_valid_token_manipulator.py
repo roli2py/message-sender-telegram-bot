@@ -6,10 +6,7 @@ from pytest_mock import MockerFixture
 from sqlalchemy import Result, Select
 from sqlalchemy.orm import Session, sessionmaker
 
-from message_sender_telegram_bot.libs import (
-    DBValidTokenManipulator,
-    ValidToken,
-)
+from message_sender_telegram_bot.libs import DBTokenManipulator, Token
 
 # select()
 select_instance_mock: MagicMock = MagicMock(
@@ -37,7 +34,7 @@ def db_session_mock(
             scalar_one_or_none=MagicMock(
                 # Session().execute().scalar_one_or_none()
                 return_value=MagicMock(
-                    spec=ValidToken,
+                    spec=Token,
                 ),
             ),
         ),
@@ -49,40 +46,40 @@ def db_session_mock(
 
 
 @pytest.fixture
-def db_valid_token_manipulator(
+def db_token_manipulator(
     db_session_mock: Session,
-) -> DBValidTokenManipulator:
+) -> DBTokenManipulator:
     token = "0123456789abcdef"
-    return DBValidTokenManipulator(db_session_mock, token)
+    return DBTokenManipulator(db_session_mock, token)
 
 
-def test_get_method_of_db_valid_token_manipulator(
+def test_get_method_of_db_token_manipulator(
     mocker: MockerFixture,
-    db_valid_token_manipulator: DBValidTokenManipulator,
+    db_token_manipulator: DBTokenManipulator,
 ) -> None:
     mocker.patch(
         (
             "message_sender_telegram_bot.libs.rdb.manipulators."
-            "db_valid_token_manipulator.ValidToken"
+            "db_token_manipulator.Token"
         ),
         autospec=True,
     )
     mocker.patch(
         (
             "message_sender_telegram_bot.libs.rdb.manipulators."
-            "db_valid_token_manipulator.select"
+            "db_token_manipulator.select"
         ),
         autospec=True,
         return_value=select_instance_mock,
     )
-    db_valid_token: ValidToken | None = db_valid_token_manipulator.get()
+    db_token: Token | None = db_token_manipulator.get()
 
-    assert isinstance(db_valid_token, ValidToken)
+    assert isinstance(db_token, Token)
 
 
-def test_create_method_of_db_valid_token_manipulator(
-    db_valid_token_manipulator: DBValidTokenManipulator,
+def test_create_method_of_db_token_manipulator(
+    db_token_manipulator: DBTokenManipulator,
 ) -> None:
-    db_valid_token: ValidToken = db_valid_token_manipulator.create()
+    db_token: Token = db_token_manipulator.create()
 
-    assert isinstance(db_valid_token, ValidToken)
+    assert isinstance(db_token, Token)

@@ -126,12 +126,6 @@ class MessageSendCooldownChecker(CooldownChecker):
 
         logger.debug("Comparing a pass date with current time...")
         pass_status: bool = self.__pass_date < datetime.now()
-        print(
-            f"{self.__pass_date = }",
-            f"{datetime.now() = }",
-            f"{pass_status = }",
-            sep=", ",
-        )
         logger.debug("Compared")
 
         return pass_status

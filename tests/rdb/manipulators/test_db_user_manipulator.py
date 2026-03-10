@@ -9,11 +9,7 @@ from pytest_mock import MockerFixture
 from sqlalchemy import Result, Select
 from sqlalchemy.orm import Session, sessionmaker
 
-from message_sender_telegram_bot.libs import (
-    DBUserManipulator,
-    User,
-    ValidToken,
-)
+from message_sender_telegram_bot.libs import DBUserManipulator, Token, User
 
 # select()
 select_instance_mock: MagicMock = MagicMock(
@@ -34,27 +30,25 @@ def user_id() -> int:
 
 
 @pytest.fixture
-def valid_token_mock(mocker: MockerFixture) -> Generator[ValidToken]:
-    valid_token_class_mock = cast(
-        type[ValidToken],
-        mocker.patch(
-            "message_sender_telegram_bot.libs.ValidToken", autospec=True
-        ),
+def token_mock(mocker: MockerFixture) -> Generator[Token]:
+    token_class_mock = cast(
+        type[Token],
+        mocker.patch("message_sender_telegram_bot.libs.Token", autospec=True),
     )
-    valid_token_mock = valid_token_class_mock(
+    token_mock = token_class_mock(
         id_=UUID("011675fa-cea4-477c-a287-c2367bd8e0b6"),
         token="TOKEN",
         user=None,
     )
-    yield valid_token_mock
-    del valid_token_mock
+    yield token_mock
+    del token_mock
 
 
 @pytest.fixture
 def db_user_mock(
     mocker: MockerFixture,
     user_id: int,
-    valid_token_mock: ValidToken,
+    token_mock: Token,
 ) -> Generator[User]:
     db_user_class_mock = cast(
         type[User],
@@ -69,9 +63,9 @@ def db_user_mock(
         user_id,
         is_authorizing=False,
         token_id=None,
-        # The fixture will assign `valid_token`, `is_owner` and
+        # The fixture will assign `token`, `is_owner` and
         # `last_send_date` later for a reason, described below
-        valid_token=None,
+        token=None,
         is_owner=False,
         last_send_date=None,
         messages=[],
@@ -79,7 +73,7 @@ def db_user_mock(
     # Patched `__init__` can't assign objects to variables by default,
     # so, the fixture assigns `is_owner` and `last_send_date` by
     # attributes
-    db_user_mock.valid_token = valid_token_mock
+    db_user_mock.token = token_mock
     db_user_mock.is_owner = False
     db_user_mock.last_send_date = datetime(2026, 3, 3, 15, 41, 25)
     yield db_user_mock
@@ -227,24 +221,22 @@ def test_get_authorizing_status_method_of_db_user_manipulator_with_db_user(
     assert isinstance(is_user_authorizing, bool)
 
 
-def test_get_valid_token_method_of_db_user_manipulator_with_user_id(
+def test_get_token_method_of_db_user_manipulator_with_user_id(
     db_user_manipulator_with_user_id: DBUserManipulator,
 ) -> None:
     with pytest.raises(
         ValueError,
         match="A DB user is absent",
     ):
-        db_user_manipulator_with_user_id.get_valid_token()
+        db_user_manipulator_with_user_id.get_token()
 
 
-def test_get_valid_token_method_of_db_user_manipulator_with_db_user(
+def test_get_token_method_of_db_user_manipulator_with_db_user(
     db_user_manipulator_with_db_user: DBUserManipulator,
 ) -> None:
-    valid_token: ValidToken | None = (
-        db_user_manipulator_with_db_user.get_valid_token()
-    )
+    token: Token | None = db_user_manipulator_with_db_user.get_token()
 
-    assert isinstance(valid_token, ValidToken)
+    assert isinstance(token, Token)
 
 
 def test_set_authorizing_status_method_of_db_user_manipulator_with_user_id(
@@ -263,38 +255,38 @@ def test_set_authorizing_status_method_of_db_user_manipulator_with_db_user(
     db_user_manipulator_with_db_user.set_authorizing_status(True)
 
 
-def test_set_valid_token_method_of_db_user_manipulator_with_user_id(
+def test_set_token_method_of_db_user_manipulator_with_user_id(
     db_user_manipulator_with_user_id: DBUserManipulator,
-    valid_token_mock: ValidToken,
+    token_mock: Token,
 ) -> None:
     with pytest.raises(
         ValueError,
         match="A DB user is absent",
     ):
-        db_user_manipulator_with_user_id.set_valid_token(valid_token_mock)
+        db_user_manipulator_with_user_id.set_token(token_mock)
 
 
-def test_set_valid_token_method_of_db_user_manipulator_with_db_user(
+def test_set_token_method_of_db_user_manipulator_with_db_user(
     db_user_manipulator_with_db_user: DBUserManipulator,
-    valid_token_mock: ValidToken,
+    token_mock: Token,
 ) -> None:
-    db_user_manipulator_with_db_user.set_valid_token(valid_token_mock)
+    db_user_manipulator_with_db_user.set_token(token_mock)
 
 
-def test_clear_valid_token_method_of_db_user_manipulator_with_user_id(
+def test_clear_token_method_of_db_user_manipulator_with_user_id(
     db_user_manipulator_with_user_id: DBUserManipulator,
 ) -> None:
     with pytest.raises(
         ValueError,
         match="A DB user is absent",
     ):
-        db_user_manipulator_with_user_id.clear_valid_token()
+        db_user_manipulator_with_user_id.clear_token()
 
 
-def test_clear_valid_token_method_of_db_user_manipulator_with_db_user(
+def test_clear_token_method_of_db_user_manipulator_with_db_user(
     db_user_manipulator_with_db_user: DBUserManipulator,
 ) -> None:
-    db_user_manipulator_with_db_user.clear_valid_token()
+    db_user_manipulator_with_db_user.clear_token()
 
 
 def test_get_owner_status_method_of_db_user_manipulator_with_user_id(

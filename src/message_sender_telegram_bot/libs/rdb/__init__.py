@@ -1,15 +1,15 @@
-from .database_tables import Message, User, ValidToken
+from .database_tables import Message, Token, User
 from .manipulators import (
     DBMessageManipulator,
+    DBTokenManipulator,
     DBUserManipulator,
-    DBValidTokenManipulator,
 )
 
 __all__ = [
     "Message",
+    "Token",
     "User",
-    "ValidToken",
     "DBMessageManipulator",
+    "DBTokenManipulator",
     "DBUserManipulator",
-    "DBValidTokenManipulator",
 ]

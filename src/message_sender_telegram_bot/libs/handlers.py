@@ -11,8 +11,8 @@ from . import consts, fstrings
 from .consts import ButtonTexts
 from .rdb import (
     DBMessageManipulator,
+    DBTokenManipulator,
     DBUserManipulator,
-    DBValidTokenManipulator,
     database_tables,
 )
 from .types import Token
@@ -92,14 +92,14 @@ class Handlers:
         with self.__compiled_session() as session:
             session.add(db_user)
 
-            valid_token: database_tables.ValidToken | None = DBUserManipulator(
+            token: database_tables.Token | None = DBUserManipulator(
                 session,
                 db_user=db_user,
-            ).get_valid_token()
+            ).get_token()
 
-        # If a DB user is authorized and a DB valid token is not exist, then
+        # If a DB user is authorized and a DB token is not exist, then
         # the token is expired and the user must enter a new token
-        if valid_token is None:
+        if token is None:
             with self.__compiled_session() as session:
                 session.add(db_user)
 
@@ -114,8 +114,12 @@ class Handlers:
 
             return None
 
-        # If other cases is not invoked, then the user is authorized
-        await chat.send_message(consts.Answers.AUTHORIZED)
+        # If other cases is not invoked, then the user had been
+        # authorized before the current handle.
+        #
+        # It can be in a case when a user was already authorized and
+        # then the user invoked a `start` command again
+        await chat.send_message(consts.Answers.ALREADY_AUTHORIZED)
 
         return None
 
@@ -502,11 +506,12 @@ class Handlers:
         hex_token: Token = Token(token_hex())
 
         with self.__compiled_session() as session:
-            new_valid_token: database_tables.ValidToken = (
-                DBValidTokenManipulator(session, hex_token).create()
-            )
+            new_token: database_tables.Token = DBTokenManipulator(
+                session,
+                hex_token,
+            ).create()
 
-            session.add(new_valid_token)
+            session.add(new_token)
 
             session.commit()
 

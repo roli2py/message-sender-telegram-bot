@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from logging import getLogger
+from logging import INFO, StreamHandler, getLogger
 from typing import TYPE_CHECKING
 from urllib.parse import SplitResult
 
@@ -15,8 +15,21 @@ from telegram.ext import (
     filters,
 )
 
-from .libs import Handlers, Helpers, Settings
-from .libs.consts import Commands
+# If the bot is run from the `main.py` file, then relative imports won't
+# work, so the program will use relative imports, if the bot is run from
+# a package and will use absolute imports otherwise
+if __package__ is not None:
+    from .libs import Handlers, Helpers, Settings
+    from .libs.consts import Commands
+else:
+    from pathlib import Path
+
+    from libs import (  # type: ignore[unresolved-import]
+        Handlers,
+        Helpers,
+        Settings,
+    )
+    from libs.consts import Commands  # type: ignore[unresolved-import]
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -24,7 +37,22 @@ if TYPE_CHECKING:
     from sqlalchemy import Engine
     from sqlalchemy.orm import Session
 
-logger: Logger = getLogger(__name__)
+# If the bot is run from the `main.py` file, then `__package__` will be
+# `None`. Also, `__name__` contains `__main__` and, therefore, it won't
+# catch low-level loggers (and gives a bad name for a handler). So, the
+# program will use `__package__`, if the bot is run from a package and
+# will get a folder's name from a running file's path otherwise
+if __package__ is not None:
+    logger_name = __package__
+else:
+    logger_name = str(Path(__file__).resolve().parent)
+
+logger: Logger = getLogger(logger_name)
+
+stream_handler = StreamHandler()
+logger.addHandler(stream_handler)
+
+logger.setLevel(INFO)
 
 # Getting values from the environment variables
 #
@@ -40,6 +68,8 @@ db_url = SplitResult(
         f"{settings.db_host}:{settings.db_port}"
     ),
     settings.db_name,
+    "",
+    "",
 ).geturl()
 
 database_engine: Engine = create_engine(db_url, pool_pre_ping=True)

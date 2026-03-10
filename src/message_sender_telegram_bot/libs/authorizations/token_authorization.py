@@ -22,7 +22,9 @@ class TokenAuthorization(Authorization):
     """
 
     def __init__[TokenType: Token](
-        self: Self, valid_tokens: set[TokenType], token: TokenType
+        self: Self,
+        tokens: set[TokenType],
+        token: TokenType,
     ) -> None:
         """
         Creates a token authorization.
@@ -32,7 +34,7 @@ class TokenAuthorization(Authorization):
         logger.debug(
             "Setting the arguments to the corresponding instance attributes..."
         )
-        self.__valid_tokens = valid_tokens
+        self.__tokens = tokens
         self.__token = token
         logger.debug("Set")
 
@@ -49,7 +51,7 @@ class TokenAuthorization(Authorization):
         logger.debug("Starting an authorizing by a hex token...")
 
         logger.debug("Authorizing...")
-        is_authorizing_success: bool = self.__token in self.__valid_tokens
+        is_authorizing_success: bool = self.__token in self.__tokens
 
         if is_authorizing_success:
             logger.debug("Authorized")

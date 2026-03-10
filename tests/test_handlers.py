@@ -20,17 +20,17 @@ from telegram.ext import ContextTypes
 
 from message_sender_telegram_bot.libs import (
     DBMessageManipulator,
+    DBTokenManipulator,
     DBUserManipulator,
-    DBValidTokenManipulator,
     Handlers,
     Helpers,
-    ValidToken,
     consts,
     fstrings,
+    types,
 )
 from message_sender_telegram_bot.libs.consts import ButtonTexts
 from message_sender_telegram_bot.libs.rdb import database_tables
-from message_sender_telegram_bot.libs.types import CooldownCheckResult, Token
+from message_sender_telegram_bot.libs.types import CooldownCheckResult
 
 
 @pytest.fixture
@@ -173,8 +173,8 @@ def db_user_manipulator_mock(
                     ),
                 ),
                 get_authorizing_status=MagicMock(return_value=False),
-                get_valid_token=MagicMock(
-                    return_value=MagicMock(spec=ValidToken),
+                get_token=MagicMock(
+                    return_value=MagicMock(spec=database_tables.Token),
                 ),
             ),
         ),
@@ -221,25 +221,25 @@ def db_message_manipulator_mock(
 
 
 @pytest.fixture
-def db_valid_token_manipulator_mock(
+def db_token_manipulator_mock(
     mocker: MockerFixture,
-) -> Generator[DBValidTokenManipulator]:
+) -> Generator[DBTokenManipulator]:
     db_session_mock = MagicMock(spec=Session)
-    token = Token("TOKEN")
+    token = types.Token("TOKEN")
 
-    db_valid_token_manipulator_class_mock = cast(
-        type[DBValidTokenManipulator],
+    db_token_manipulator_class_mock = cast(
+        type[DBTokenManipulator],
         mocker.patch(
-            "message_sender_telegram_bot.libs.handlers.DBValidTokenManipulator",
+            "message_sender_telegram_bot.libs.handlers.DBTokenManipulator",
             autospec=True,
         ),
     )
-    db_valid_token_manipulator_mock = db_valid_token_manipulator_class_mock(
+    db_token_manipulator_mock = db_token_manipulator_class_mock(
         db_session_mock,
         token,
     )
-    yield db_valid_token_manipulator_mock
-    del db_valid_token_manipulator_mock
+    yield db_token_manipulator_mock
+    del db_token_manipulator_mock
 
 
 class TestStart:
@@ -309,14 +309,14 @@ class TestStart:
         )
 
     @pytest.mark.asyncio
-    async def test_stop_of_handle_when_valid_token_is_absent(
+    async def test_stop_of_handle_when_token_is_absent(
         self: Self,
         handlers: Handlers,
         update_obj_mock: Update,
         ctx_mock: ContextTypes,
         db_user_manipulator_mock: DBUserManipulator,
     ) -> None:
-        db_user_manipulator_mock.get_valid_token.return_value = None  # type: ignore[unresolved-attribute]
+        db_user_manipulator_mock.get_token.return_value = None  # type: ignore[unresolved-attribute]
 
         await handlers.start(update_obj_mock, ctx_mock)
 
@@ -342,7 +342,7 @@ class TestStart:
         await handlers.start(update_obj_mock, ctx_mock)
 
         update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
-            consts.Answers.AUTHORIZED,
+            consts.Answers.ALREADY_AUTHORIZED,
         )
 
 
@@ -709,17 +709,6 @@ class TestSend:
 
 
 class TestCancel:
-    # What do I need to test?:
-    # - [x] chat is None
-    # - [x] user is None
-    # - [x] db_user is not None
-    #     - [x] is_user_authorizing
-    # - [x] callback_query is not None
-    #     - [x] message is None or callback_data is None
-    #     - [x] db_message is None
-    #     - [x] db_user is None or db_message.sender_id != db_user.id_
-    #     - [x] db_message.is_sent
-    # - [ ] none of the cases above
     @pytest.mark.asyncio
     async def test_stop_of_handle_when_chat_is_absent(
         self: Self,
@@ -776,22 +765,6 @@ class TestCancel:
         update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
             consts.Answers.AUTHORIZATION_CANCELED,
         )
-
-    # TODO find a way to check that a handler is fallen in the category
-    # or remove this test
-    # @pytest.mark.asyncio
-    # async def test_fall_into_callback_related_category_when_it_is_not_absent(
-    #     self: Self,
-    #     handlers: Handlers,
-    #     update_obj_mock: Update,
-    #     ctx_mock: ContextTypes,
-    #     db_user_manipulator_mock: DBUserManipulator,
-    # ) -> None:
-    #     await handlers.cancel(update_obj_mock, ctx_mock)
-    #
-    #     update_obj_mock.effective_chat.send_message.assert_called_once_with(
-    #         consts.Answers.NOTHING_TO_CANCEL,
-    #     )
 
     @pytest.mark.asyncio
     async def test_stop_of_handle_when_message_is_absent(
@@ -1122,9 +1095,9 @@ class TestGenerateToken:
         update_obj_mock: Update,
         ctx_mock: ContextTypes,
         helpers_mock: Helpers,
-        # The fixture patches a DB valid token manipulator to
-        # successfully finish a handle
-        db_valid_token_manipulator_mock: DBValidTokenManipulator,
+        # The fixture patches a DB token manipulator to successfully
+        # finish a handle
+        db_token_manipulator_mock: DBTokenManipulator,
     ) -> None:
         token = "TOKEN"
         mocker.patch(

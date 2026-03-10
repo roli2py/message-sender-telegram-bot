@@ -27,9 +27,9 @@ interface Authorization {
     + authorize(): Boolean
 }
 class TokenAuthorization<TokenType : Token> {
-    - valid_tokens: set<TokenType>
+    - tokens: set<TokenType>
     - token: TokenType
-    + TokenAuthorization(valid_tokens: set<TokenType>, token: TokenType)
+    + TokenAuthorization(tokens: set<TokenType>, token: TokenType)
     + authorize(): Boolean
 }
 interface Token {
@@ -48,8 +48,8 @@ class HexTokenGenerator {
 }
 class DeclarativeBase
 class Base
-class ValidToken {
-    + __tablename__: String = "valid_token"
+class Token {
+    + __tablename__: String = "token"
     + id_: Mapped<UUID>
     + token: Mapped<String>
 }
@@ -73,10 +73,10 @@ interface AbstractDBUserManipulator {
     + get(): User [0..1]
     + create(): User
     + get_authorizing_status(): Boolean
-    + get_valid_token(): ValidToken [0..1]
+    + get_token(): Token [0..1]
     + set_authorizing_status(is_authorizing: Boolean): None
-    + set_valid_token(valid_token: ValidToken): None
-    + clear_valid_token(): None
+    + set_token(token: Token): None
+    + clear_token(): None
     + get_owner_status(): Boolean
 }
 class DBUserManipulator {
@@ -87,18 +87,18 @@ class DBUserManipulator {
     + get(): User [0..1]
     + create(): User
     + get_authorizing_status(): Boolean
-    + get_valid_token(): ValidToken [0..1]
+    + get_token(): Token [0..1]
     + set_authorizing_status(is_authorizing: Boolean): None
-    + set_valid_token(valid_token: ValidToken): None
-    + clear_valid_token(): None
+    + set_token(token: Token): None
+    + clear_token(): None
     + get_owner_status(): Boolean
 }
-class DBValidTokenManipulator {
+class DBTokenManipulator {
     - db_session: Session
     - token: String
-    + DBValidTokenManipulator(db_session: Session, token: String)
-    + get(): ValidToken [0..1]
-    + create(): ValidToken
+    + DBTokenManipulator(db_session: Session, token: String)
+    + get(): Token [0..1]
+    + create(): Token
 }
 interface OwnershipProver {
     + prove(): Boolean
@@ -207,18 +207,18 @@ TokenGenerator <|.. HexTokenGenerator
 Token <-- TokenGenerator
 Token <-- HexTokenGenerator
 DeclarativeBase <|-- Base
-Base <|-- ValidToken
+Base <|-- Token
 Base <|-- User
-Mapped <-- ValidToken
-UUID <-- ValidToken
+Mapped <-- Token
+UUID <-- Token
 Mapped <-- User
 UUID <-- User
 DBItemGetter <|-- AbstractDBUserManipulator
 DBItemCreator <|-- AbstractDBUserManipulator
 AbstractDBUserManipulator <|.. DBUserManipulator
 Session <-- DBUserManipulator
-DBItemGetter <|.. DBValidTokenManipulator
-DBItemCreator <|.. DBValidTokenManipulator
+DBItemGetter <|.. DBTokenManipulator
+DBItemCreator <|.. DBTokenManipulator
 OwnershipProver <|.. UserOwnershipProver
 CooldownChecker <|.. MessageSendCooldownChecker
 datetime <-- MessageSendCooldownChecker

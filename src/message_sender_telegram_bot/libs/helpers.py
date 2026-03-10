@@ -7,7 +7,7 @@ import telegram
 
 from .consts import Answers, ButtonTexts
 from .cooldown_checkers import MessageSendCooldownChecker
-from .rdb import DBUserManipulator, DBValidTokenManipulator, database_tables
+from .rdb import DBTokenManipulator, DBUserManipulator, database_tables
 from .senders.email_sender import EmailSender
 from .smtp_creators.gmail_smtp_creator import GmailSMTPCreator
 from .types import CooldownCheckResult, Token
@@ -45,16 +45,14 @@ class Helpers:
 
         with self.__compiled_session() as session:
             session.add(db_user)
-            valid_token: database_tables.ValidToken | None = (
-                DBValidTokenManipulator(
-                    session,
-                    token,
-                ).get()
-            )
+            token: database_tables.Token | None = DBTokenManipulator(
+                session,
+                token,
+            ).get()
 
-        # If a DB valid token with a user-provided token is not exist,
-        # then the token is expired or invalid
-        if valid_token is None:
+        # If a DB token with a user-provided token is not exist, then
+        # the token is expired or invalid
+        if token is None:
             await chat.send_message(Answers.TOKEN_IS_NOT_VALID)
 
             return None
@@ -67,7 +65,7 @@ class Helpers:
                 session,
                 db_user=db_user,
             )
-            db_user_manipulator.set_valid_token(valid_token)
+            db_user_manipulator.set_token(token)
             db_user_manipulator.set_authorizing_status(False)
             session.commit()
 

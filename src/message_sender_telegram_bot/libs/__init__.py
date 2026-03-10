@@ -6,11 +6,11 @@ from .handlers import Handlers
 from .helpers import Helpers
 from .rdb import (
     DBMessageManipulator,
+    DBTokenManipulator,
     DBUserManipulator,
-    DBValidTokenManipulator,
     Message,
+    Token,
     User,
-    ValidToken,
 )
 from .senders import EmailSender
 from .settings import Settings
@@ -22,11 +22,11 @@ __all__ = [
     "Handlers",
     "Helpers",
     "DBMessageManipulator",
+    "DBTokenManipulator",
     "DBUserManipulator",
-    "DBValidTokenManipulator",
     "Message",
+    "Token",
     "User",
-    "ValidToken",
     "EmailSender",
     "Settings",
     "GmailSMTPCreator",

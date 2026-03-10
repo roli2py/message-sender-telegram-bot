@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from logging import Logger
     from typing import Self
 
-    from ..rdb.database_tables import User, ValidToken
+    from ..rdb.database_tables import Token, User
 
 logger: Logger = getLogger(__name__)
 
@@ -99,12 +99,12 @@ class AbstractDBUserManipulator(
         )
 
     @abstractmethod
-    def get_valid_token(self: Self) -> ValidToken | None:
+    def get_token(self: Self) -> Token | None:
         """
-        Gets a DB user's DB valid token.
+        Gets a DB user's DB token.
 
-        :return: A DB user's DB valid token or None, if the DB user's
-                 valid token is absent.
+        :return: A DB user's DB token or None, if the DB user's token is
+                 absent.
         :rtype: str | None
         :raises NotImplementedError: Must be implemented.
         """
@@ -150,12 +150,12 @@ class AbstractDBUserManipulator(
         )
 
     @abstractmethod
-    def set_valid_token(self: Self, valid_token: ValidToken) -> None:
+    def set_token(self: Self, token: Token) -> None:
         """
-        Sets a DB user's DB valid token. This means, that the user
-        claims the token.
+        Sets a DB user's DB token. This means, that the user claims the
+        token.
 
-        :param token: A DB valid token to set.
+        :param token: A DB token to set.
         :type token: str
         :raises NotImplementedError: Must be implemented.
         """
@@ -176,10 +176,10 @@ class AbstractDBUserManipulator(
         )
 
     @abstractmethod
-    def clear_valid_token(self: Self) -> None:
+    def clear_token(self: Self) -> None:
         """
-        Clears a DB user's DB valid token. This means, that the user
-        loses the claim to the token.
+        Clears a DB user's DB token. This means, that the user loses the
+        claim to the token.
 
         :raises NotImplementedError: Must be implemented.
         """

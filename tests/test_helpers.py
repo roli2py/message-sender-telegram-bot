@@ -99,7 +99,7 @@ def db_user_mock(
         user_id,
         is_authorizing=False,
         token_id=None,
-        valid_token=None,
+        token=None,
         is_owner=False,
         # The fixture will assign `last_send_date` later
         last_send_date=None,
@@ -143,7 +143,7 @@ class TestAuthorize:
         db_user_mock: User,
     ) -> None:
         mocker.patch(
-            "message_sender_telegram_bot.libs.helpers.DBValidTokenManipulator",
+            "message_sender_telegram_bot.libs.helpers.DBTokenManipulator",
             autospec=True,
             return_value=MagicMock(
                 get=MagicMock(return_value=None),

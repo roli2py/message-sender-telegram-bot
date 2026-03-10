@@ -7,7 +7,7 @@ from uuid import uuid4
 from sqlalchemy import select
 
 from ...interfaces import DBItemCreator, DBItemGetter
-from ..database_tables import ValidToken
+from ..database_tables import Token
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -19,9 +19,9 @@ if TYPE_CHECKING:
 logger: Logger = getLogger(__name__)
 
 
-class DBValidTokenManipulator(DBItemGetter, DBItemCreator):
+class DBTokenManipulator(DBItemGetter, DBItemCreator):
     """
-    A DB valid token manipulator.
+    A DB token manipulator.
 
     :param DBItemGetter: A DB item getter interface.
     :type DBItemGetter: class
@@ -31,7 +31,7 @@ class DBValidTokenManipulator(DBItemGetter, DBItemCreator):
 
     def __init__(self: Self, db_session: Session, token: str) -> None:
         """
-        Creates a DB valid token manipulator.
+        Creates a DB token manipulator.
 
         :param db_session: A DB session.
         :type db_session: Session
@@ -50,44 +50,43 @@ class DBValidTokenManipulator(DBItemGetter, DBItemCreator):
         logger.debug("Initialized")
 
     @override
-    def get(self: Self) -> ValidToken | None:
+    def get(self: Self) -> Token | None:
         """
-        Gets a DB valid token.
+        Gets a DB token.
 
-        :return: A DB valid token or None, if the DB valid token is not
-                 found.
-        :rtype: ValidToken | None
+        :return: A DB token or None, if the DB token is not found.
+        :rtype: Token | None
         """
-        logger.debug("Starting a getting of the DB valid token...")
+        logger.debug("Starting a getting of the DB token...")
 
         logger.debug("Constructing a statement...")
-        select_token_stmt: Select[tuple[ValidToken]] = select(
-            ValidToken
-        ).where(ValidToken.token == self.__token)
+        select_token_stmt: Select[tuple[Token]] = select(Token).where(
+            Token.token == self.__token
+        )
         logger.debug("Constructed")
 
         logger.debug("Executing the statement...")
-        result: Result[tuple[ValidToken]] = self.__db_session.execute(
+        result: Result[tuple[Token]] = self.__db_session.execute(
             select_token_stmt
         )
         logger.debug("Executed")
 
-        logger.debug("Getting the DB valid token...")
-        valid_token: ValidToken | None = result.scalar_one_or_none()
+        logger.debug("Getting the DB token...")
+        token: Token | None = result.scalar_one_or_none()
         logger.debug("Got")
 
-        return valid_token
+        return token
 
     @override
-    def create(self: Self) -> ValidToken:
-        logger.debug("Starting a creation of the DB valid token...")
+    def create(self: Self) -> Token:
+        logger.debug("Starting a creation of the DB token...")
 
-        logger.debug("Creating a DB valid token...")
-        new_valid_token: ValidToken = ValidToken(
+        logger.debug("Creating a DB token...")
+        new_token: Token = Token(
             id_=uuid4(),
             token=self.__token,
             user=None,
         )
         logger.debug("Created")
 
-        return new_valid_token
+        return new_token
