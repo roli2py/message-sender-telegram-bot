@@ -3,14 +3,17 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-import telegram
+from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup
 
+from message_sender_telegram_bot.libs import User
+
+from . import types
 from .consts import Answers, ButtonTexts
 from .cooldown_checkers import MessageSendCooldownChecker
 from .rdb import DBTokenManipulator, DBUserManipulator, database_tables
 from .senders.email_sender import EmailSender
 from .smtp_creators.gmail_smtp_creator import GmailSMTPCreator
-from .types import CooldownCheckResult, Token
+from .types import CooldownCheckResult
 
 if TYPE_CHECKING:
     from typing import Self
@@ -35,13 +38,13 @@ class Helpers:
 
     async def authorize(
         self: Self,
-        chat: telegram.Chat,
+        chat: Chat,
         message_text: str,
-        db_user: database_tables.User,
+        db_user: User,
     ) -> None:
         # Assuming, that a user invoked a `start` command and this
         # message contains an authorization token
-        token: Token = Token(message_text)
+        token: types.Token = types.Token(message_text)
 
         with self.__compiled_session() as session:
             session.add(db_user)
@@ -88,25 +91,21 @@ class Helpers:
 
     async def show_message_confirmation_panel(
         self: Self,
-        chat: telegram.Chat,
+        chat: Chat,
         message_id: int,
     ) -> None:
-        yes_button: telegram.InlineKeyboardButton = (
-            telegram.InlineKeyboardButton(
-                ButtonTexts.YES,
-                callback_data=f"message_confirmation,true,{message_id}",
-            )
+        yes_button: InlineKeyboardButton = InlineKeyboardButton(
+            ButtonTexts.YES,
+            callback_data=f"message_confirmation,true,{message_id}",
         )
 
-        no_button: telegram.InlineKeyboardButton = (
-            telegram.InlineKeyboardButton(
-                ButtonTexts.NO,
-                callback_data=f"message_confirmation,false,{message_id}",
-            )
+        no_button: InlineKeyboardButton = InlineKeyboardButton(
+            ButtonTexts.NO,
+            callback_data=f"message_confirmation,false,{message_id}",
         )
 
-        reply_markup: telegram.InlineKeyboardMarkup = (
-            telegram.InlineKeyboardMarkup(((yes_button, no_button),))
+        reply_markup: InlineKeyboardMarkup = InlineKeyboardMarkup(
+            ((yes_button, no_button),)
         )
         await chat.send_message(
             Answers.SEND_MESSAGE_QUESTION,
@@ -115,7 +114,7 @@ class Helpers:
 
     async def check_cooldown(
         self: Self,
-        db_user: database_tables.User,
+        db_user: User,
     ) -> CooldownCheckResult:
         with self.__compiled_session() as session:
             session.add(db_user)

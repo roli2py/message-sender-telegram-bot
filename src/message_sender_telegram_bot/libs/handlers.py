@@ -5,6 +5,7 @@ from secrets import token_hex
 from typing import TYPE_CHECKING
 
 import telegram
+from telegram import Chat, Update
 from telegram.constants import ChatType, ParseMode
 
 from . import consts, fstrings
@@ -38,10 +39,10 @@ class Handlers:
     # Handler that starts an authorization process
     async def start(
         self: Self,
-        update: telegram.Update,
+        update: Update,
         ctx: ContextTypes.DEFAULT_TYPE,
     ) -> None:
-        chat: telegram.Chat | None = update.effective_chat
+        chat: Chat | None = update.effective_chat
 
         if chat is None:
             return None
@@ -125,10 +126,10 @@ class Handlers:
 
     async def handle_message(
         self: Self,
-        update: telegram.Update,
+        update: Update,
         ctx: ContextTypes.DEFAULT_TYPE,
     ) -> None:
-        chat: telegram.Chat | None = update.effective_chat
+        chat: Chat | None = update.effective_chat
 
         if chat is None:
             return None
@@ -207,10 +208,10 @@ class Handlers:
     # Handler that pass the message to the senders
     async def send(
         self: Self,
-        update: telegram.Update,
+        update: Update,
         ctx: ContextTypes.DEFAULT_TYPE,
     ) -> None:
-        chat: telegram.Chat | None = update.effective_chat
+        chat: Chat | None = update.effective_chat
 
         if chat is None:
             return None
@@ -317,10 +318,10 @@ class Handlers:
 
     async def cancel(
         self: Self,
-        update: telegram.Update,
+        update: Update,
         ctx: ContextTypes.DEFAULT_TYPE,
     ) -> None:
-        chat: telegram.Chat | None = update.effective_chat
+        chat: Chat | None = update.effective_chat
 
         if chat is None:
             return None
@@ -421,10 +422,10 @@ class Handlers:
 
     async def notify_about_unknown_command(
         self: Self,
-        update: telegram.Update,
+        update: Update,
         ctx: ContextTypes.DEFAULT_TYPE,
     ) -> None:
-        chat: telegram.Chat | None = update.effective_chat
+        chat: Chat | None = update.effective_chat
 
         if chat is None:
             return None
@@ -437,10 +438,10 @@ class Handlers:
     # TODO realize a "List tokens" button
     async def show_admin_panel(
         self: Self,
-        update: telegram.Update,
+        update: Update,
         ctx: ContextTypes.DEFAULT_TYPE,
     ) -> None:
-        chat: telegram.Chat | None = update.effective_chat
+        chat: Chat | None = update.effective_chat
 
         if chat is None:
             return None
@@ -480,10 +481,10 @@ class Handlers:
 
     async def generate_token(
         self: Self,
-        update: telegram.Update,
+        update: Update,
         ctx: ContextTypes.DEFAULT_TYPE,
     ) -> None:
-        chat: telegram.Chat | None = update.effective_chat
+        chat: Chat | None = update.effective_chat
 
         if chat is None:
             return None

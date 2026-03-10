@@ -32,20 +32,6 @@ class TokenAuthorization<TokenType : Token> {
     + TokenAuthorization(tokens: set<TokenType>, token: TokenType)
     + authorize(): Boolean
 }
-interface Token {
-    + get(): String
-}
-class HexToken {
-    - token: String
-    + HexToken(token: String)
-    + get(): String
-}
-interface TokenGenerator {
-    + create(): Token
-}
-class HexTokenGenerator {
-    + create(): Token
-}
 class DeclarativeBase
 class Base
 class Token {
@@ -60,9 +46,19 @@ class User {
     + token: Mapped<String> [0..1]
     + is_authorizing: Mapped<Boolean>
 }
+class Message {
+    + __tablename__: String = "message"
+    + id_: Mapped<UUID>
+    + message_id: Mapped<Integer>
+    + sender_id: Mapped<UUID [0..1]>
+    + sender: Mapped<User>
+    + text: Mapped<String>
+    + is_sent: Mapped<Boolean>
+}
 class Mapped<T>
 class UUID
 class Session
+class sessionmaker<T>
 interface DBItemGetter {
     + get(): Base [0..1]
 }
@@ -129,6 +125,34 @@ class DBMessageManipulator {
     + get(): Message [0..1]
     + create(): Message
 }
+'TODO add a `telegram` package
+'TODO add a `CooldownCheckResult`
+class Helpers {
+    - gmail_smtp_login: String
+    - gmail_smtp_password: String
+    - email_from_addr: String
+    - email_to_addr: String
+    - compiled_session: sessionmaker<Session>
+    + Helpers(gmail_smtp_login: String, gmail_smtp_password: String, email_from_addr: String, email_to_addr: String, compiled_session: sessionmaker<Session>)
+    + authorize(chat: telegram.Chat, message_text: String, db_user: database_tables.User): None
+    + send_email(name: String, test: String): None
+    + show_message_confirmation_panel(chat: telegram.Chat, message_id: Integer): None
+    + check_cooldown(db_user: database_tables.User): CooldownCheckResult
+    + is_user_owner(user_id: Integer): Boolean
+}
+'TODO add a `telegram` package
+class Handlers {
+    - compiled_session: sessionmaker<Session>
+    - helpers: Helpers
+    + Handlers(compiled_session: sessionmaker<Session>, helpers: Helpers)
+    + start(update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE): None
+    + handle_message(update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE): None
+    + send(update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE): None
+    + cancel(update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE): None
+    + notify_about_unknown_command(update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE): None
+    + show_admin_panel(update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE): None
+    + generate_token(update: telegram.Update, ctx: ContextTypes.DEFAULT_TYPE): None
+}
 
 note left of None
     Indicating a lack of the value
@@ -163,6 +187,11 @@ note left of Session
     that provides a control
     of the database tables
     by the ORM classes
+endnote
+note left of sessionmaker
+    A SQLAlchemy's class-builder
+    that creates a configured
+    session maker
 endnote
 note right of DBUserManipulator::DBUserManipulator
     There is no reason to
@@ -201,18 +230,16 @@ SMTP <-- SMTPCreator
 SMTPCreator <|.. GmailSMTPCreator
 Authorization <|.. TokenAuthorization
 set <-- TokenAuthorization
-Token <-- TokenAuthorization
-Token <|.. HexToken
-TokenGenerator <|.. HexTokenGenerator
-Token <-- TokenGenerator
-Token <-- HexTokenGenerator
 DeclarativeBase <|-- Base
 Base <|-- Token
 Base <|-- User
+Base <|-- Message
 Mapped <-- Token
 UUID <-- Token
 Mapped <-- User
 UUID <-- User
+Mapped <-- Message
+UUID <-- Message
 DBItemGetter <|-- AbstractDBUserManipulator
 DBItemCreator <|-- AbstractDBUserManipulator
 AbstractDBUserManipulator <|.. DBUserManipulator
@@ -225,4 +252,10 @@ datetime <-- MessageSendCooldownChecker
 timedelta <-- MessageSendCooldownChecker
 DBItemGetter <|-- DBMessageManipulator
 DBItemCreator <|-- DBMessageManipulator
+sessionmaker <-- Helpers
+Session <-- Helpers
+sessionmaker <-- Handlers
+Session <-- Handlers
+'TODO connect `Handlers` and `Helpers` to a `telegram` package
+'TODO connect `Handlers` to a named tuple `CooldownCheckResult`
 @enduml
