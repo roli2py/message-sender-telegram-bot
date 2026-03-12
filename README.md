@@ -31,7 +31,7 @@ Steps to set up the project:
     ```ini
     # ...
     # replace the placeholders to appropriate data
-    sqlalchemy.url = mysql+mysqldb://user:pass@host:port/dbname
+    sqlalchemy.url = mysql+pymysql://user:pass@host:port/dbname
     # ...
     ```
 5. Migrate the database by `alembic`:
