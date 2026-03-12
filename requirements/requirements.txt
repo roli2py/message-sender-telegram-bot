@@ -4,4 +4,7 @@ python-telegram-bot ~= 22.5
 # RDB
 sqlalchemy ~= 2.0.45
 mysqlclient ~= 2.2.7
-alembic ~= 1.17.2 
+alembic ~= 1.17.2
+
+# Settings fetcher and validator
+pydantic-settings ~= 2.13.1

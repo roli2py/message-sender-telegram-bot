@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from logging import getLogger
-from smtplib import SMTP
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self, override
+from typing import TYPE_CHECKING, override
 
-from .sender import Sender
+from ..interfaces import Sender
 
 if TYPE_CHECKING:
     from logging import Logger
+    from smtplib import SMTP
     from typing import Self
 
 logger: Logger = getLogger(__name__)
@@ -71,7 +71,8 @@ class EmailSender(Sender):
 
         logger.debug("Initialized")
 
-    def get_sender_name(self: Self) -> str:
+    @property
+    def sender_name(self: Self) -> str:
         """
         Gets a sender name.
 
@@ -80,14 +81,15 @@ class EmailSender(Sender):
         """
         return self.__sender_name
 
-    def set_sender_name(self: Self, sender_name: str) -> None:
+    @sender_name.setter
+    def sender_name(self: Self, sender_name: str) -> None:
         """
         Sets a sender name.
 
         :param sender_name: A sender name to set.
         :type sender_name: str
         """
-        self.__sender_name = sender_name
+        self.__sender_name: str = sender_name
 
     @override
     def send(self: Self, data: str) -> None:

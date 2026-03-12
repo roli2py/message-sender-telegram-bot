@@ -1,0 +1,150 @@
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
+
+from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup
+
+from . import types
+from .consts import Answers, ButtonTexts
+from .cooldown_checkers import MessageSendCooldownChecker
+from .rdb import DBTokenManipulator, DBUserManipulator, User, database_tables
+from .senders.email_sender import EmailSender
+from .smtp_creators.gmail_smtp_creator import GmailSMTPCreator
+from .types import CooldownCheckResult
+
+if TYPE_CHECKING:
+    from typing import Self
+
+    from sqlalchemy.orm import Session, sessionmaker
+
+
+class Helpers:
+    def __init__(
+        self: Self,
+        gmail_smtp_login: str,
+        gmail_smtp_password: str,
+        email_from_addr: str,
+        email_to_addr: str,
+        compiled_session: sessionmaker[Session],
+    ) -> None:
+        self.__gmail_smtp_login: str = gmail_smtp_login
+        self.__gmail_smtp_password: str = gmail_smtp_password
+        self.__email_from_addr: str = email_from_addr
+        self.__email_to_addr: str = email_to_addr
+        self.__compiled_session: sessionmaker[Session] = compiled_session
+
+    async def authorize(
+        self: Self,
+        chat: Chat,
+        message_text: str,
+        db_user: User,
+    ) -> None:
+        # Assuming, that a user invoked a `start` command and this
+        # message contains an authorization token
+        token: types.Token = types.Token(message_text)
+
+        with self.__compiled_session() as session:
+            session.add(db_user)
+            token: database_tables.Token | None = DBTokenManipulator(
+                session,
+                token,
+            ).get()
+
+        # If a DB token with a user-provided token is not exist, then
+        # the token is expired or invalid
+        if token is None:
+            await chat.send_message(Answers.TOKEN_IS_NOT_VALID)
+
+            return None
+
+        # On this step, the user is pass the challenges, so the user is
+        # authorized
+        with self.__compiled_session() as session:
+            session.add(db_user)
+            db_user_manipulator: DBUserManipulator = DBUserManipulator(
+                session,
+                db_user=db_user,
+            )
+            db_user_manipulator.set_token(token)
+            db_user_manipulator.set_authorizing_status(False)
+            session.commit()
+
+        await chat.send_message(Answers.AUTHORIZED)
+
+        return None
+
+    async def send_email(self: Self, name: str, text: str) -> None:
+        with GmailSMTPCreator(
+            self.__gmail_smtp_login,
+            self.__gmail_smtp_password,
+        ) as smtp:
+            email_sender: EmailSender = EmailSender(
+                smtp,
+                self.__email_from_addr,
+                self.__email_to_addr,
+                sender_name=name,
+            )
+            email_sender.send(text)
+
+    async def show_message_confirmation_panel(
+        self: Self,
+        chat: Chat,
+        message_id: int,
+    ) -> None:
+        yes_button: InlineKeyboardButton = InlineKeyboardButton(
+            ButtonTexts.YES,
+            callback_data=f"message_confirmation,true,{message_id}",
+        )
+
+        no_button: InlineKeyboardButton = InlineKeyboardButton(
+            ButtonTexts.NO,
+            callback_data=f"message_confirmation,false,{message_id}",
+        )
+
+        reply_markup: InlineKeyboardMarkup = InlineKeyboardMarkup(
+            ((yes_button, no_button),)
+        )
+        await chat.send_message(
+            Answers.SEND_MESSAGE_QUESTION,
+            reply_markup=reply_markup,
+        )
+
+    async def check_cooldown(
+        self: Self,
+        db_user: User,
+    ) -> CooldownCheckResult:
+        with self.__compiled_session() as session:
+            session.add(db_user)
+            last_send_date: datetime | None = db_user.last_send_date
+
+        if last_send_date is None:
+            return CooldownCheckResult(True, timedelta())
+
+        cooldown: timedelta = timedelta(seconds=30)
+
+        is_cooldown_passed: bool = MessageSendCooldownChecker(
+            last_send_date,
+            cooldown=cooldown,
+        ).is_passed()
+
+        if is_cooldown_passed:
+            return CooldownCheckResult(True, timedelta())
+
+        diff_between_dates: timedelta = datetime.now() - last_send_date
+        remaining_cooldown: timedelta = cooldown - diff_between_dates
+
+        return CooldownCheckResult(False, remaining_cooldown)
+
+    async def is_user_owner(self: Self, user_id: int) -> bool:
+        with self.__compiled_session() as session:
+            db_user_manipulator: DBUserManipulator = DBUserManipulator(
+                session,
+                user_id=user_id,
+            )
+            # A `get` method adding a found user to the instance and,
+            # therefore, the program aren't assigning a variable
+            db_user_manipulator.get()
+            is_user_owner: bool = db_user_manipulator.get_owner_status()
+
+        return is_user_owner

@@ -1,37 +1,36 @@
-from unittest.mock import patch
-
 from pytest import fixture
 
-from message_sender_telegram_bot.libs import HexToken, TokenAuthorization
+from message_sender_telegram_bot.libs import TokenAuthorization
+from message_sender_telegram_bot.libs.types import Token
 
 
 @fixture
-@patch("message_sender_telegram_bot.libs.HexToken", get="0123456789abcdef")
-def valid_token(hex_token_mock: HexToken) -> HexToken:
-    return hex_token_mock
+def valid_token() -> Token:
+    return Token("0123456789abcdef")
 
 
 @fixture
-@patch("message_sender_telegram_bot.libs.HexToken", get="abcdef0123456789")
-def invalid_token(hex_token_mock: HexToken) -> HexToken:
-    return hex_token_mock
+def invalid_token() -> Token:
+    return Token("abcdef0123456789")
 
 
 @fixture
-def valid_tokens(valid_token: HexToken) -> set[HexToken]:
+def valid_tokens(valid_token: Token) -> set[Token]:
     return {valid_token}
 
 
 @fixture
 def token_authorization(
-    valid_tokens: set[HexToken], valid_token: HexToken
+    valid_tokens: set[Token],
+    valid_token: Token,
 ) -> TokenAuthorization:
     return TokenAuthorization(valid_tokens, valid_token)
 
 
 @fixture
 def token_authorization_with_invalid_token(
-    valid_tokens: set[HexToken], invalid_token: HexToken
+    valid_tokens: set[Token],
+    invalid_token: Token,
 ) -> TokenAuthorization:
     return TokenAuthorization(valid_tokens, invalid_token)
 

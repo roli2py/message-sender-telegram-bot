@@ -3,8 +3,8 @@ from __future__ import annotations
 from logging import getLogger
 from typing import TYPE_CHECKING, override
 
-from ..tokens import Token
-from .authorization import Authorization
+from ..interfaces.authorization import Authorization
+from ..types import Token
 
 if TYPE_CHECKING:
     from logging import Logger
@@ -22,17 +22,19 @@ class TokenAuthorization(Authorization):
     """
 
     def __init__[TokenType: Token](
-        self: Self, valid_tokens: set[TokenType], token: TokenType
+        self: Self,
+        tokens: set[TokenType],
+        token: TokenType,
     ) -> None:
         """
         Creates a token authorization.
         """
-        logger.debug(f"Initializing `%s`...", self.__class__.__name__)
+        logger.debug("Initializing `%s`...", self.__class__.__name__)
 
         logger.debug(
             "Setting the arguments to the corresponding instance attributes..."
         )
-        self.__valid_tokens = valid_tokens
+        self.__tokens = tokens
         self.__token = token
         logger.debug("Set")
 
@@ -49,7 +51,7 @@ class TokenAuthorization(Authorization):
         logger.debug("Starting an authorizing by a hex token...")
 
         logger.debug("Authorizing...")
-        is_authorizing_success: bool = self.__token in self.__valid_tokens
+        is_authorizing_success: bool = self.__token in self.__tokens
 
         if is_authorizing_success:
             logger.debug("Authorized")

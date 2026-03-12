@@ -1,5 +1,49 @@
 @startuml classDiagram
 class None <<primitive>>
+package typing {
+    class NamedTuple
+}
+package datetime {
+    class datetime
+    class timedelta
+}
+package telegram {
+    class Update
+}
+package telegram.ext {
+    class ContextTypes
+}
+package telegram.constants {
+    class ChatType
+    class ParseMode
+}
+package message_sender_telegram_bot.libs.rdb.database_tables {
+    class Base
+    class DBToken as "Token" {
+        + __tablename__: String = "token"
+        + id_: Mapped<UUID>
+        + token: Mapped<String>
+    }
+    class User {
+        + __tablename__: String = "user"
+        + id_: Mapped<UUID>
+        + user_id: Mapped<Integer>
+        + token: Mapped<String> [0..1]
+        + is_authorizing: Mapped<Boolean>
+    }
+    class Message {
+        + __tablename__: String = "message"
+        + id_: Mapped<UUID>
+        + message_id: Mapped<Integer>
+        + sender_id: Mapped<UUID [0..1]>
+        + sender: Mapped<User>
+        + text: Mapped<String>
+        + is_sent: Mapped<Boolean>
+    }
+}
+package message_sender_telegram_bot.libs.types {
+    class TypeToken as "Token"
+}
 interface Sender {
     + send(data: String): None
 }
@@ -26,43 +70,17 @@ class set<T>
 interface Authorization {
     + authorize(): Boolean
 }
-class TokenAuthorization<TokenType : Token> {
-    - valid_tokens: set<TokenType>
+class TokenAuthorization<TokenType : TypeToken> {
+    - tokens: set<TokenType>
     - token: TokenType
-    + TokenAuthorization(valid_tokens: set<TokenType>, token: TokenType)
+    + TokenAuthorization(tokens: set<TokenType>, token: TokenType)
     + authorize(): Boolean
 }
-interface Token {
-    + get(): String
-}
-class HexToken {
-    - token: String
-    + HexToken(token: String)
-    + get(): String
-}
-interface TokenGenerator {
-    + create(): Token
-}
-class HexTokenGenerator {
-    + create(): Token
-}
 class DeclarativeBase
-class Base
-class ValidToken {
-    + __tablename__: String = "valid_token"
-    + id_: Mapped<UUID>
-    + token: Mapped<String>
-}
-class User {
-    + __tablename__: String = "user"
-    + id_: Mapped<UUID>
-    + user_id: Mapped<Integer>
-    + token: Mapped<String> [0..1]
-    + is_authorizing: Mapped<Boolean>
-}
 class Mapped<T>
 class UUID
 class Session
+class sessionmaker<T>
 interface DBItemGetter {
     + get(): Base [0..1]
 }
@@ -73,10 +91,10 @@ interface AbstractDBUserManipulator {
     + get(): User [0..1]
     + create(): User
     + get_authorizing_status(): Boolean
-    + get_valid_token(): ValidToken [0..1]
+    + get_token(): Token [0..1]
     + set_authorizing_status(is_authorizing: Boolean): None
-    + set_valid_token(valid_token: ValidToken): None
-    + clear_valid_token(): None
+    + set_token(token: Token): None
+    + clear_token(): None
     + get_owner_status(): Boolean
 }
 class DBUserManipulator {
@@ -87,18 +105,18 @@ class DBUserManipulator {
     + get(): User [0..1]
     + create(): User
     + get_authorizing_status(): Boolean
-    + get_valid_token(): ValidToken [0..1]
+    + get_token(): Token [0..1]
     + set_authorizing_status(is_authorizing: Boolean): None
-    + set_valid_token(valid_token: ValidToken): None
-    + clear_valid_token(): None
+    + set_token(token: Token): None
+    + clear_token(): None
     + get_owner_status(): Boolean
 }
-class DBValidTokenManipulator {
+class DBTokenManipulator {
     - db_session: Session
     - token: String
-    + DBValidTokenManipulator(db_session: Session, token: String)
-    + get(): ValidToken [0..1]
-    + create(): ValidToken
+    + DBTokenManipulator(db_session: Session, token: String)
+    + get(): Token [0..1]
+    + create(): Token
 }
 interface OwnershipProver {
     + prove(): Boolean
@@ -108,8 +126,6 @@ class UserOwnershipProver {
     + UserOwnershipProver(db_user_manipulator: AbstractDBUserManipulator)
     + prove(): Boolean
 }
-class datetime
-class timedelta
 interface CooldownChecker {
     + is_pass(): Boolean
 }
@@ -128,6 +144,31 @@ class DBMessageManipulator {
     + DBMessageManipulator(db_session: Session, message_id: Integer, sender: User = None, text: String = None)
     + get(): Message [0..1]
     + create(): Message
+}
+class Helpers {
+    - gmail_smtp_login: String
+    - gmail_smtp_password: String
+    - email_from_addr: String
+    - email_to_addr: String
+    - compiled_session: sessionmaker<Session>
+    + Helpers(gmail_smtp_login: String, gmail_smtp_password: String, email_from_addr: String, email_to_addr: String, compiled_session: sessionmaker<Session>)
+    + authorize(chat: Chat, message_text: String, db_user: User): None
+    + send_email(name: String, test: String): None
+    + show_message_confirmation_panel(chat: Chat, message_id: Integer): None
+    + check_cooldown(db_user: User): CooldownCheckResult
+    + is_user_owner(user_id: Integer): Boolean
+}
+class Handlers {
+    - compiled_session: sessionmaker<Session>
+    - helpers: Helpers
+    + Handlers(compiled_session: sessionmaker<Session>, helpers: Helpers)
+    + start(update: Update, ctx: ContextTypes): None
+    + handle_message(update: Update, ctx: ContextTypes): None
+    + send(update: Update, ctx: ContextTypes): None
+    + cancel(update: Update, ctx: ContextTypes): None
+    + notify_about_unknown_command(update: Update, ctx: ContextTypes): None
+    + show_admin_panel(update: Update, ctx: ContextTypes): None
+    + generate_token(update: Update, ctx: ContextTypes): None
 }
 
 note left of None
@@ -150,12 +191,12 @@ note right of DeclarativeBase
     to make a base for a
     declarative mapping
 endnote
-note right of Mapped
+note top of Mapped
     A SQLAlchemy's class
     that represents a database
     column type
 endnote
-note right of UUID
+note top of UUID
     A Python's UUID class
 endnote
 note left of Session
@@ -163,6 +204,11 @@ note left of Session
     that provides a control
     of the database tables
     by the ORM classes
+endnote
+note left of sessionmaker
+    A SQLAlchemy's class-builder
+    that creates a configured
+    session maker
 endnote
 note right of DBUserManipulator::DBUserManipulator
     There is no reason to
@@ -176,12 +222,12 @@ note right of DBUserManipulator::DBUserManipulator
     either a user ID or a DB
     user
 endnote
-note right of datetime
+note top of datetime
     A `datetime` library's
     class that represents a
     date with time
 endnote
-note left of timedelta
+note top of timedelta
     A `datetime` library's
     class that represents a
     difference between two
@@ -193,36 +239,51 @@ note right of MessageSendCooldownChecker::MessageSendCooldownChecker
     specific date when a user
     will get an access
 endnote
+note right of TypeToken
+    A token type for type
+    checkers
+endnote
+note right of NamedTuple
+    A type hinted
+    `namedtuple` from a
+    `collections` library
+endnote
 
-None <-- Sender
 Sender <|.. EmailSender
 EmailSender o-- SMTP
 SMTP <-- SMTPCreator
 SMTPCreator <|.. GmailSMTPCreator
 Authorization <|.. TokenAuthorization
 set <-- TokenAuthorization
-Token <-- TokenAuthorization
-Token <|.. HexToken
-TokenGenerator <|.. HexTokenGenerator
-Token <-- TokenGenerator
-Token <-- HexTokenGenerator
 DeclarativeBase <|-- Base
-Base <|-- ValidToken
+Base <|-- DBToken
 Base <|-- User
-Mapped <-- ValidToken
-UUID <-- ValidToken
+Base <|-- Message
+Mapped <-- DBToken
+UUID <-- DBToken
 Mapped <-- User
 UUID <-- User
+Mapped <-- Message
+UUID <-- Message
 DBItemGetter <|-- AbstractDBUserManipulator
 DBItemCreator <|-- AbstractDBUserManipulator
 AbstractDBUserManipulator <|.. DBUserManipulator
 Session <-- DBUserManipulator
-DBItemGetter <|.. DBValidTokenManipulator
-DBItemCreator <|.. DBValidTokenManipulator
+DBItemGetter <|.. DBTokenManipulator
+DBItemCreator <|.. DBTokenManipulator
 OwnershipProver <|.. UserOwnershipProver
 CooldownChecker <|.. MessageSendCooldownChecker
 datetime <-- MessageSendCooldownChecker
 timedelta <-- MessageSendCooldownChecker
-DBItemGetter <|-- DBMessageManipulator
-DBItemCreator <|-- DBMessageManipulator
+DBItemGetter <|.. DBMessageManipulator
+DBItemCreator <|.. DBMessageManipulator
+sessionmaker <-- Helpers
+Session <-- Helpers
+DBUser <-- Helpers
+Chat <-- Helpers
+sessionmaker <-- Handlers
+Session <-- Handlers
+Helpers <-- Handlers
+Update <-- Handlers
+ContextTypes <-- Handlers
 @enduml

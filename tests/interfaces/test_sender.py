@@ -1,0 +1,27 @@
+from typing import Self, override
+
+from pytest import fixture, raises
+
+from message_sender_telegram_bot.libs.interfaces import Sender
+
+
+@fixture
+def sender_wrapper() -> Sender:
+    class SenderWrapper(Sender):
+        @override
+        def send(self: Self, data: str) -> None:
+            return super().send(data)
+
+    return SenderWrapper()
+
+
+def test_disallow_of_creation_of_sender_interface_instance() -> None:
+    with raises(TypeError):
+        _ = Sender()
+
+
+def test_disallow_of_direct_using_of_send_method(
+    sender_wrapper: Sender,
+) -> None:
+    with raises(NotImplementedError):
+        _ = sender_wrapper.send("DATA")

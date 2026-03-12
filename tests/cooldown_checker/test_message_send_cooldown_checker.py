@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from pytest import fixture, raises
+from pytest_mock import MockerFixture
 
 from message_sender_telegram_bot.libs import MessageSendCooldownChecker
 
@@ -28,7 +29,7 @@ def pass_date() -> datetime:
     return datetime.fromisoformat("2026-01-13T14:30:55Z")
 
 
-def test_a_reject_of_an_init_without_a_cooldown_and_a_pass_date(
+def test_reject_of_init_without_cooldown_and_pass_date(
     last_send_date: datetime,
 ) -> None:
     with raises(
@@ -38,7 +39,7 @@ def test_a_reject_of_an_init_without_a_cooldown_and_a_pass_date(
         MessageSendCooldownChecker(last_send_date)  # type: ignore
 
 
-def test_a_reject_of_an_init_with_a_cooldown_and_a_pass_date(
+def test_reject_of_init_with_cooldown_and_pass_date(
     last_send_date: datetime,
     cooldown: timedelta,
     pass_date: datetime,
@@ -70,80 +71,80 @@ def message_send_cooldown_checker_with_pass_date(
     return MessageSendCooldownChecker(last_send_date, pass_date=pass_date)
 
 
-@patch(
-    (
-        "message_sender_telegram_bot.libs.cooldown_checkers."
-        "message_send_cooldown_checker.datetime"
-    ),
-    spec=datetime,
-    now=MagicMock(return_value=datetime_in_cooldown_period),
-)
-def test_an_is_pass_method_with_a_cooldown_in_a_cooldown_period(
-    _,
+def test_is_pass_method_with_cooldown_in_cooldown_period(
+    mocker: MockerFixture,
     message_send_cooldown_checker_with_cooldown: MessageSendCooldownChecker,
 ) -> None:
+    mocker.patch(
+        (
+            "message_sender_telegram_bot.libs.cooldown_checkers."
+            "message_send_cooldown_checker.datetime"
+        ),
+        autospec=True,
+        now=MagicMock(return_value=datetime_in_cooldown_period),
+    )
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_cooldown.is_pass()
+        message_send_cooldown_checker_with_cooldown.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)
     assert not is_cooldown_pass
 
 
-@patch(
-    (
-        "message_sender_telegram_bot.libs.cooldown_checkers."
-        "message_send_cooldown_checker.datetime"
-    ),
-    spec=datetime,
-    now=MagicMock(return_value=datetime_in_cooldown_period),
-)
-def test_an_is_pass_method_with_a_pass_date_in_a_cooldown_period(
-    _,
+def test_is_pass_method_with_pass_date_in_cooldown_period(
+    mocker: MockerFixture,
     message_send_cooldown_checker_with_pass_date: MessageSendCooldownChecker,
 ) -> None:
+    mocker.patch(
+        (
+            "message_sender_telegram_bot.libs.cooldown_checkers."
+            "message_send_cooldown_checker.datetime"
+        ),
+        autospec=True,
+        now=MagicMock(return_value=datetime_in_cooldown_period),
+    )
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_pass_date.is_pass()
+        message_send_cooldown_checker_with_pass_date.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)
     assert not is_cooldown_pass
 
 
-@patch(
-    (
-        "message_sender_telegram_bot.libs.cooldown_checkers."
-        "message_send_cooldown_checker.datetime"
-    ),
-    spec=datetime,
-    now=MagicMock(return_value=datetime_out_of_cooldown_period),
-)
-def test_an_is_pass_method_with_a_cooldown_out_of_a_cooldown_period(
-    _,
+def test_is_pass_method_with_cooldown_out_of_cooldown_period(
+    mocker: MockerFixture,
     message_send_cooldown_checker_with_cooldown: MessageSendCooldownChecker,
 ) -> None:
+    mocker.patch(
+        (
+            "message_sender_telegram_bot.libs.cooldown_checkers."
+            "message_send_cooldown_checker.datetime"
+        ),
+        autospec=True,
+        now=MagicMock(return_value=datetime_out_of_cooldown_period),
+    )
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_cooldown.is_pass()
+        message_send_cooldown_checker_with_cooldown.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)
     assert is_cooldown_pass
 
 
-@patch(
-    (
-        "message_sender_telegram_bot.libs.cooldown_checkers."
-        "message_send_cooldown_checker.datetime"
-    ),
-    spec=datetime,
-    now=MagicMock(return_value=datetime_out_of_cooldown_period),
-)
-def test_an_is_pass_method_with_a_pass_date_out_of_a_cooldown_period(
-    _,
+def test_is_pass_method_with_pass_date_out_of_cooldown_period(
+    mocker: MockerFixture,
     message_send_cooldown_checker_with_pass_date: MessageSendCooldownChecker,
 ) -> None:
+    mocker.patch(
+        (
+            "message_sender_telegram_bot.libs.cooldown_checkers."
+            "message_send_cooldown_checker.datetime"
+        ),
+        autospec=True,
+        now=MagicMock(return_value=datetime_out_of_cooldown_period),
+    )
     is_cooldown_pass: bool = (
-        message_send_cooldown_checker_with_pass_date.is_pass()
+        message_send_cooldown_checker_with_pass_date.is_passed()
     )
 
     assert isinstance(is_cooldown_pass, bool)

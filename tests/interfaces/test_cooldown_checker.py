@@ -1,0 +1,27 @@
+from typing import Self, override
+
+from pytest import fixture, raises
+
+from message_sender_telegram_bot.libs.interfaces import CooldownChecker
+
+
+@fixture
+def cooldown_checker_wrapper() -> CooldownChecker:
+    class CooldownCheckerWrapper(CooldownChecker):
+        @override
+        def is_passed(self: Self) -> bool:
+            return super().is_passed()
+
+    return CooldownCheckerWrapper()
+
+
+def test_disallow_of_creation_of_cooldown_checker_interface_instance() -> None:
+    with raises(TypeError):
+        CooldownChecker()
+
+
+def test_disallow_of_direct_using_of_is_pass_method(
+    cooldown_checker_wrapper: CooldownChecker,
+) -> None:
+    with raises(NotImplementedError):
+        cooldown_checker_wrapper.is_passed()
