@@ -62,7 +62,7 @@ logger.setLevel(INFO)
 settings = Settings()  # type: ignore[missing-argument]
 
 db_url = SplitResult(
-    "mysql+mysqldb",
+    "mysql+pymysql",
     (
         f"{settings.db_user}:{settings.db_password}@"
         f"{settings.db_host}:{settings.db_port}"
