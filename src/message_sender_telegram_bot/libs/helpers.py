@@ -5,12 +5,10 @@ from typing import TYPE_CHECKING
 
 from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup
 
-from message_sender_telegram_bot.libs import User
-
 from . import types
 from .consts import Answers, ButtonTexts
 from .cooldown_checkers import MessageSendCooldownChecker
-from .rdb import DBTokenManipulator, DBUserManipulator, database_tables
+from .rdb import DBTokenManipulator, DBUserManipulator, User, database_tables
 from .senders.email_sender import EmailSender
 from .smtp_creators.gmail_smtp_creator import GmailSMTPCreator
 from .types import CooldownCheckResult
