@@ -2,6 +2,8 @@
 
 A telegram bot that sends messages to the different platforms.
 
+![Example](assets/images/example.png)
+
 From the receiver's (that is, a bot's owner's) side, it helps to concetrate only on the important messages and to not worry, that you miss something. From the sender's (for example, friend's) side, it gives a handy Telegram interface that simplify a using of the message sender.
 
 ![Work Scheme](assets/images/work-scheme.png)
