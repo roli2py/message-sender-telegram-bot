@@ -160,21 +160,22 @@ def db_user_manipulator_mock(
     mocker: MockerFixture,
     user_uuid: UUID,
 ) -> Generator[DBUserManipulator]:
+    db_token_mock = MagicMock(spec=database_tables.Token)
+    db_user_mock = MagicMock(
+        spec=database_tables.User,
+        id_=user_uuid,
+        token=db_token_mock,
+    )
     db_user_manipulator_class_mock = cast(
         type[DBUserManipulator],
         mocker.patch(
             "message_sender_telegram_bot.libs.handlers.DBUserManipulator",
             autospec=True,
             return_value=MagicMock(
-                get=MagicMock(
-                    return_value=MagicMock(
-                        spec=database_tables.User,
-                        id_=user_uuid,
-                    ),
-                ),
+                get=MagicMock(return_value=db_user_mock),
                 get_authorizing_status=MagicMock(return_value=False),
                 get_token=MagicMock(
-                    return_value=MagicMock(spec=database_tables.Token),
+                    return_value=db_token_mock,
                 ),
             ),
         ),
@@ -328,7 +329,7 @@ class TestStart:
         set_authorizing_status_func.assert_called_once_with(True)  # type: ignore[unresolved-attribute]
 
         update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
-            consts.Answers.TOKEN_IS_EXPIRED,
+            consts.Answers.TOKEN_EXPIRED_ENTER_NEW_TOKEN,
         )
 
     @pytest.mark.asyncio
@@ -438,6 +439,23 @@ class TestHandleMessage:
         await handlers.handle_message(update_obj_mock, ctx_mock)
 
         helpers_mock.authorize.assert_called_once()  # type: ignore[unresolved-attribute]
+
+    @pytest.mark.asyncio
+    async def test_stop_of_handle_when_token_of_db_user_is_absent(
+        self: Self,
+        handlers: Handlers,
+        update_obj_mock: Update,
+        ctx_mock: ContextTypes,
+        db_user_manipulator_mock: DBUserManipulator,
+        helpers_mock: Helpers,
+    ) -> None:
+        db_user_manipulator_mock.get.return_value.token = None  # type: ignore[unresolved-attribute]
+
+        await handlers.handle_message(update_obj_mock, ctx_mock)
+
+        update_obj_mock.effective_chat.send_message.assert_called_once_with(  # type: ignore[unresolved-attribute]
+            consts.Answers.TOKEN_EXPIRED_SEND_START,
+        )
 
     @pytest.mark.asyncio
     async def test_stop_of_handle_when_cooldown_is_not_passed(

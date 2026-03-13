@@ -58,6 +58,16 @@ class Helpers:
 
             return None
 
+        # If a token has a user, then a token is using by an another
+        # user
+        with self.__compiled_session() as session:
+            session.add(token)
+
+            if token.user is not None:
+                await chat.send_message(Answers.TOKEN_WAS_USED)
+
+                return None
+
         # On this step, the user is pass the challenges, so the user is
         # authorized
         with self.__compiled_session() as session:

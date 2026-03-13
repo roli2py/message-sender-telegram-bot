@@ -111,7 +111,9 @@ class Handlers:
 
                 session.commit()
 
-            await chat.send_message(consts.Answers.TOKEN_IS_EXPIRED)
+            await chat.send_message(
+                consts.Answers.TOKEN_EXPIRED_ENTER_NEW_TOKEN,
+            )
 
             return None
 
@@ -173,6 +175,16 @@ class Handlers:
             await self.__helpers.authorize(chat, message_text, db_user)
 
             return None
+
+        with self.__compiled_session() as session:
+            session.add(db_user)
+
+            if db_user.token is None:
+                await chat.send_message(
+                    consts.Answers.TOKEN_EXPIRED_SEND_START,
+                )
+
+                return None
 
         (
             is_cooldown_passed,

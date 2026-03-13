@@ -17,7 +17,13 @@ class Answers:
     SEND_MESSAGE_QUESTION = "Send a message?"
     UNKNOWN_ERROR_OCCURS = "An unknown error occurs"
     ENTER_TOKEN = "Enter the token"
-    TOKEN_IS_EXPIRED = "Your token is expired. Please, enter a new token"
+    TOKEN_EXPIRED_ENTER_NEW_TOKEN = (
+        "Your token expired. Please, enter a new token"
+    )
+    TOKEN_EXPIRED_SEND_START = (
+        "Your token expired. Please, send /start to authorize"
+    )
+    TOKEN_WAS_USED = "Token was already used by an another user"
     MESSAGE_DOESNT_HAVE_TEXT = (
         "Your message doesn't have a text. Send a message with a text"
     )

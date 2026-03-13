@@ -11,12 +11,15 @@ from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ChatType
 
 from message_sender_telegram_bot.libs import (
+    DBTokenManipulator,
     DBUserManipulator,
     EmailSender,
     Helpers,
     User,
+    types,
 )
 from message_sender_telegram_bot.libs.consts import Answers, ButtonTexts
+from message_sender_telegram_bot.libs.rdb import database_tables
 
 
 @pytest.fixture
@@ -132,6 +135,37 @@ def db_user_manipulator_mock(
     del db_user_manipulator_mock
 
 
+@pytest.fixture
+def db_token_manipulator_mock(
+    mocker: MockerFixture,
+    compiled_session_mock: sessionmaker[Session],
+) -> Generator[DBTokenManipulator]:
+    db_token_manipulator_class_mock = cast(
+        type[DBTokenManipulator],
+        mocker.patch(
+            "message_sender_telegram_bot.libs.helpers.DBTokenManipulator",
+            autospec=True,
+            return_value=MagicMock(
+                get=MagicMock(
+                    return_value=MagicMock(
+                        spec=database_tables.Token,
+                        user=None,
+                    ),
+                ),
+            ),
+        ),
+    )
+    db_session_mock = compiled_session_mock()
+    token = types.Token("TOKEN")
+
+    db_token_manipulator_mock = db_token_manipulator_class_mock(
+        db_session_mock,
+        token,
+    )
+    yield db_token_manipulator_mock
+    del db_token_manipulator_mock
+
+
 class TestAuthorize:
     @pytest.mark.asyncio
     async def test_detect_of_invalid_token(
@@ -141,14 +175,9 @@ class TestAuthorize:
         chat_mock: Chat,
         message_text: str,
         db_user_mock: User,
+        db_token_manipulator_mock: DBTokenManipulator,
     ) -> None:
-        mocker.patch(
-            "message_sender_telegram_bot.libs.helpers.DBTokenManipulator",
-            autospec=True,
-            return_value=MagicMock(
-                get=MagicMock(return_value=None),
-            ),
-        )
+        db_token_manipulator_mock.get.return_value = None  # type: ignore[unresolved-attribute]
 
         await helpers.authorize(chat_mock, message_text, db_user_mock)
 
@@ -157,12 +186,28 @@ class TestAuthorize:
         )
 
     @pytest.mark.asyncio
+    async def test_detect_of_used_token(
+        self: Self,
+        helpers: Helpers,
+        chat_mock: Chat,
+        message_text: str,
+        db_user_mock: User,
+        db_token_manipulator_mock: DBTokenManipulator,
+    ) -> None:
+        db_token_manipulator_mock.get.return_value.user = MagicMock(spec=User)  # type: ignore[unresolved-attribute]
+
+        await helpers.authorize(chat_mock, message_text, db_user_mock)
+
+        chat_mock.send_message.assert_called_once_with(Answers.TOKEN_WAS_USED)  # type:ignore[unresolved-attribute]
+
+    @pytest.mark.asyncio
     async def test_success_authorization(
         self: Self,
         helpers: Helpers,
         chat_mock: Chat,
         message_text: str,
         db_user_mock: User,
+        db_token_manipulator_mock: DBTokenManipulator,
     ) -> None:
         await helpers.authorize(chat_mock, message_text, db_user_mock)
 
