@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Github
+.github
+
+# Cache
+.pytest_cache
+.ruff_cache
+
+# Virtual environments
+.venv
+
+# VSCode
+.vscode
+
+# Environment files
+.env
+example.env
+docker.example.env
+
+# Documentation
+docs
+assets
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md
+
+# Alembic
+db_migration
+alembic.ini
+
+# Requirements
+requirements
+
+# coverage.py
+.coverage
+
+# pre-commit
+.pre-commit-config.yaml
+
+# Docker
+Dockerfile
+
+# GNU make
+Makefile
